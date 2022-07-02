@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Allow remote admin from WAN ports.
+
+uci -q batch << EOF
+add luci command
+set luci.@command[-1].name="iSCSI Target Status"
+set luci.@command[-1].command="/etc/init.d/tgt show"
+commit luci
+EOF

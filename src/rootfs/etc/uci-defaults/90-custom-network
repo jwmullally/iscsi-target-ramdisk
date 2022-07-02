@@ -1,0 +1,7 @@
+#!/bin/sh
+
+uci -q batch << EOF
+set network.lan.ipaddr='192.168.200.1'
+set network.@device[0].bridge_empty='1'
+commit network
+EOF

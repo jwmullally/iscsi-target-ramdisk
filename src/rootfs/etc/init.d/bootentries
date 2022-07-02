@@ -1,0 +1,121 @@
+#!/bin/sh /etc/rc.common
+
+START=90
+USE_PROCD=1
+
+validate_bootentries_section() {
+	uci_load_validate bootentries bootentries "$1" "$2" \
+		'boot_partition:string' \
+		'boot_path:string:/' \
+		'cmdline_default:string' \
+		'cmdline_iscsi:string' \
+		'cmdline_remove:string' \
+		'menu_title:string:OpenWrt PXE TFTP Boot Menu' \
+		'menu_password:string'
+}
+
+bootentries_config() {
+	[ "$2" = 0 ] || {
+		echo "validation failed"
+		return 1
+	}
+
+	mkdir -p /srv/tftp/pxelinux.cfg
+	cat > /srv/tftp/pxelinux.cfg/default <<EOF
+DEFAULT menu.c32
+#DEFAULT vesamenu.c32
+PROMPT 0
+MENU TITLE $menu_title
+#ALLOWOPTIONS 0
+EOF
+
+	rm -rf /srv/tftp/bootentries
+	mkdir /srv/tftp/bootentries
+	
+	umount -f /mnt || true
+	mount -o ro "$boot_partition" /mnt || return 1
+
+	if [ -d "/mnt/$boot_path/loader/entries" ]; then
+		# Create an menu entry for every BootLoaderSpec file
+		entry_found="0"
+		for entry in "/mnt/$boot_path/loader/entries"/*.conf; do
+			TITLE="$(sed -n 's/^title[ \t]*\(.*\)/\1/p' $entry)"
+			KERNEL_PATH="$(sed -n 's/^linux[ \t]*\(.*\)/\1/p' $entry)"
+			INITRD_PATH="$(sed -n 's/^initrd[ \t]*\(.*\)/\1/p' $entry)"
+			OPTIONS="$(sed -n 's/^options[ \t]*\(.*\)/\1/p' $entry)"
+			if [ -n "$TITLE" -a -n "$KERNEL_PATH" -a -n "$INITRD_PATH" ]; then
+				LABEL="$(basename "$entry")"
+				mkdir -p "/srv/tftp/bootentries/$LABEL"
+				KERNEL_IMG="bootentries/$LABEL/$(basename "$KERNEL_PATH")"
+				INITRD_IMG="bootentries/$LABEL/$(basename "$INITRD_PATH")"
+				cp "/mnt/$boot_path/$KERNEL_PATH" "/srv/tftp/$KERNEL_IMG"
+				cp "/mnt/$boot_path/$INITRD_PATH" "/srv/tftp/$INITRD_IMG"
+				chmod 644 "/srv/tftp/$KERNEL_IMG"
+				chmod 644 "/srv/tftp/$INITRD_IMG"
+				echo -e "" >> /srv/tftp/pxelinux.cfg/default
+				echo -e "label $LABEL" >> /srv/tftp/pxelinux.cfg/default
+				echo -e "\tMENU LABEL $TITLE" >> /srv/tftp/pxelinux.cfg/default
+				if [ -n "$menu_password" ]; then
+					echo -e "\tMENU PASSWD $menu_password" >> /srv/tftp/pxelinux.cfg/default
+				fi
+				echo -e "\tKERNEL $KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
+				echo -e "\tAPPEND initrd=$INITRD_IMG $OPTIONS $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
+				echo -e "\tSYSAPPEND 0x2" >> /srv/tftp/pxelinux.cfg/default
+				entry_found="1"
+			fi
+		done
+		if [ "$entry_found" = "0" ]; then
+			echo "Could not find any BootLoaderSpec kernel images for PXE TFTP boot"
+			return 1
+		fi
+	else
+		# Find latest Kernel image
+		KERNEL_FILE="$(ls -t "/mnt/$boot_path" | grep 'vmlinuz-.*' | grep -v ".hmac$" | head -n1)"
+		if [ -z "$KERNEL_FILE" ]; then
+			echo "Could not find any kernel images for PXE TFTP boot"
+			return 1
+		fi
+		KERNEL_VERSION="$(echo $KERNEL_FILE | sed 's/vmlinuz-//g')"
+		# Find matching Initramfs image
+		if [ -f "/mnt/$boot_path/initramfs-$KERNEL_VERSION.img" ]; then
+			INITRD_FILE="initramfs-$KERNEL_VERSION.img"
+		elif [ -f "/mnt/$boot_path/initrd.img-$KERNEL_VERSION" ]; then
+			INITRD_FILE="initrd.img-$KERNEL_VERSION"
+		else
+			echo "Could not find any initramfs image for PXE TFTP boot matching kernel $KERNEL_FILE"
+			return 1
+		fi
+		LABEL="$KERNEL_FILE"
+		mkdir -p "/srv/tftp/bootentries/$LABEL"
+		KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
+		INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
+		cp "/mnt/$boot_path/$KERNEL_FILE" "/srv/tftp/$KERNEL_IMG"
+		cp "/mnt/$boot_path/$INITRD_FILE" "/srv/tftp/$INITRD_IMG"
+		chmod 644 "/srv/tftp/$KERNEL_IMG"
+		chmod 644 "/srv/tftp/$INITRD_IMG"
+		echo -e "" >> /srv/tftp/pxelinux.cfg/default
+		echo -e "label $LABEL" >> /srv/tftp/pxelinux.cfg/default
+		echo -e "\tMENU LABEL $LABEL" >> /srv/tftp/pxelinux.cfg/default
+		if [ -n "$menu_password" ]; then
+			echo -e "\tMENU PASSWD $menu_password" >> /srv/tftp/pxelinux.cfg/default
+		fi
+		echo -e "\tKERNEL $KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
+		echo -e "\tAPPEND initrd=$INITRD_IMG $cmdline_default $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
+		echo -e "\tSYSAPPEND 0x2" >> /srv/tftp/pxelinux.cfg/default
+	fi
+	umount /mnt
+}
+
+reload_service() {
+	config_load bootentries
+	config_foreach validate_bootentries_section bootentries bootentries_config
+}
+
+service_triggers() {
+	procd_add_reload_trigger "bootentries"
+	procd_add_validation validate_bootentries_section
+}
+
+start_service() {
+	reload_service
+}

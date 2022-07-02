@@ -1,0 +1,4 @@
+<network>
+  <name>isolated</name>
+  <domain name='isolated'/>
+</network>

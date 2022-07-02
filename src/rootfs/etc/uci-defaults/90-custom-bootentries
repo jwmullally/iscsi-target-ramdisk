@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+
+# Settings for copying kernel images from your device's disk to the ramdisk's
+# TFTP boot folder. Customize this for your specific partitions.
+
+uci import bootentries < /dev/null
+uci add bootentries bootentries
+
+# Specify the boot partition. It's recommended to instead use blkid IDs
+# instead of e.g. "/dev/sda" to avoid inconsistent block device numbering.
+uci set bootentries.@bootentries[0].boot_partition="$(blkid --uuid 'b7b071ef-8c7f-480c-b8d5-a02fdae46f90')"
+
+# boot_path is the location of the kernels relative to boot_partition.
+# E.g. "/", or "/boot" if included in the main root partition
+uci set bootentries.@bootentries[0].boot_path="/"
+
+# If we can't determine the kernel command line, use this
+uci set bootentries.@bootentries[0].cmdline_default="ro rhgb root=/dev/disk/by-uuid/5b6621d0-15ae-4c93-b9d6-f2a197a9ef06"
+
+# Specify the dracut-network iSCSI parameters
+uci set bootentries.@bootentries[0].cmdline_iscsi="rd.shell rd.retry=5 rd.iscsi.initiator=iqn.2018-04.org.example:client-host netroot=iscsi:192.168.200.1::::iqn.2018-04.org.example:target-host rd.iscsi.username=testuser1 rd.iscsi.password=pass0001 rd.iscsi.in.username=testuser2 rd.iscsi.in.password=pass0002"
+
+# Remove these from any found cmdlines
+uci set bootentries.@bootentries[0].cmdline_remove="quiet"
+
+# PXE menu settings
+uci set bootentries.@bootentries[0].menu_title="OpenWrt PXE TFTP Boot Menu"
+uci set bootentries.@bootentries[0].menu_password="pass1234"
+
+uci commit bootentries

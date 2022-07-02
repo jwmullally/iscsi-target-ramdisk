@@ -1,0 +1,7 @@
+#!/bin/sh
+
+uci -q batch << EOF
+set system.@system[0].hostname='openwrt-iscsi-target'
+set system.@system[0].ttylogin='1'
+commit system
+EOF

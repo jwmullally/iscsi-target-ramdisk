@@ -1,0 +1,41 @@
+#!/bin/sh
+set -e
+
+# Create tgt iSCSI targets for all specified drives.
+# Note these are your entire disks you are sharing, not individual partition devices.
+
+uci import tgt <<EOF
+config options 'tgt'
+	option iothreads '16'
+
+config target 1
+	option name 'iqn.2018-04.org.example:target-host'
+	list allow_name 'iqn.2018-04.org.example:client-host'
+	list allow_address '192.168.200.2'
+
+config account
+	list target '1'
+	option user 'testuser1'
+	option password 'pass0001'
+
+config account
+	list target '1'
+	option user 'testuser2'
+	option password 'pass0002'
+	option outgoing '1'
+EOF
+
+# Find parent disk from partion UUID
+uci set tgt.1_1=lun
+uci set tgt.1_1.device="$(lsblk -npdo pkname $(blkid --uuid 'b7b071ef-8c7f-480c-b8d5-a02fdae46f90'))"
+uci set tgt.1_1.type='disk'
+uci set tgt.1_1.bstype='aio'
+uci commit tgt
+
+# Manually specify block device. It's recommended to instead use blkid IDs
+# to avoid inconsistent block device numbering.
+uci set tgt.1_2=lun
+uci set tgt.1_2.device='/dev/vdb'
+uci set tgt.1_2.type='disk'
+uci set tgt.1_2.bstype='aio'
+uci commit tgt

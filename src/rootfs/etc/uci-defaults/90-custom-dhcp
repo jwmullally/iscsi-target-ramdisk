@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Configure dnsmasq for PXE TFTP boot.
+#
+# Limit DHCP assignments to 1 IP, to prevent accidental concurrent booting
+# of multiple clients.
+
+uci -q batch << EOF
+set dhcp.@dnsmasq[0].local='/iscsi/'
+set dhcp.@dnsmasq[0].domain='iscsi'
+set dhcp.@dnsmasq[0].enable_tftp='1'
+set dhcp.@dnsmasq[0].tftp_root='/srv/tftp'
+set dhcp.@dnsmasq[0].dhcp_boot='pxelinux.0'
+set dhcp.lan.start='2'
+set dhcp.lan.limit='1'
+set dhcp.lan.force='1'
+commit dhcp
+EOF
+
+
+# PXEClient:Arch:00000
+#pxe-service=X86PC, "Boot BIOS PXE", bios/pxelinux
+
+# PXEClient:Arch:00007
+#pxe-service=BC_EFI, "Boot UEFI PXE-BC", efi64/syslinux.efi
+
+# PXEClient:Arch:00009
+#pxe-service=X86-64_EFI, "Boot UEFI PXE-64", efi64/syslinux.efi

@@ -1,0 +1,29 @@
+{
+    "config_version": "2.5.0",
+    "debug": false,
+    "harddrives": [
+        "/dev/vda"
+    ],
+    "hostname": "test-target-archlinux",
+    "mirror-region": {
+        "Worldwide": {
+            "http://mirror.rackspace.com/archlinux/$repo/os/$arch": true,
+            "https://geo.mirror.pkgbuild.com/$repo/os/$arch": true,
+            "https://mirror.rackspace.com/archlinux/$repo/os/$arch": true
+        }
+    },
+    "mount_point": null,
+    "nic": {
+        "dhcp": true,
+        "dns": null,
+        "gateway": null,
+        "iface": null,
+        "ip": null,
+        "type": "nm"
+    },
+    "plugin": null,
+    "script": "guided",
+    "silent": false,
+    "swap": false,
+    "version": "2.5.0"
+}
