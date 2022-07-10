@@ -51,11 +51,11 @@ and have a backup bootdisk/CD/USB in case anything goes wrong*
 *!! Currently there is NO ENCRYPTION for the iSCSI endpoint. See TODO
 below. For now, only run this on a trusted network with trusted hosts.*
 
-* While running, treat disconnecting the network cable like unplugging your harddrive while your computer is
-  running. Some distributions seem better are recovering the connection than others. Changing the
-  settings of the network interface carrying the iSCSI traffic can have the same effect.
+While running, treat disconnecting the network cable like unplugging your harddrive while your computer is
+running. Some distributions seem better are recovering the connection than others. Changing the
+settings of the network interface carrying the iSCSI traffic can have the same effect.
 
-* On OpenWrt, use `logread -f` to keep an eye on the PXE boot progress.
+On OpenWrt, use `logread -f` to keep an eye on the PXE boot progress.
 
 
 ## Installation
