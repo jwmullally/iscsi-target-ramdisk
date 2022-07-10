@@ -88,7 +88,7 @@ You'll mainly just want to update:
 NOTE: This replaces `initramfs-tools` with `dracut`
 
 ```
-sudo dependencies/debian/build.sh`
+sudo dependencies/debian/build.sh
 make images
 sudo dependencies/debian/install.sh
 sudo ./install.sh
