@@ -221,6 +221,8 @@ Patches are welcome.
 
 * Sort "OpenWrt iSCSI Target" entry under OS entries in bootloader menu
 
+* Change iSCSI from userspace TGT to in-kernel LIO ([Example](doc/rough_comparison_lio_vs_tgtd.png))
+
 
 ## Reference
 
