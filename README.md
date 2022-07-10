@@ -55,8 +55,6 @@ While running, treat disconnecting the network cable like unplugging your harddr
 running. Some distributions seem better are recovering the connection than others. Changing the
 settings of the network interface carrying the iSCSI traffic can have the same effect.
 
-On OpenWrt, use `logread -f` to keep an eye on the PXE boot progress.
-
 
 ## Installation
 
@@ -132,6 +130,15 @@ If you want to make changes to the OpenWrt configuration, you will only need to 
 make images
 sudo ./update.sh
 ```
+
+
+## Troubleshooting
+
+On OpenWrt: Check `/srv/tftp/pxelinux.cfg/default` and `/srv/tftp/bootentries` contain the expected kernels. Update `/etc/config/bootentries` and rerun `/etc/init.d/bootentries restart` to try find them again.
+
+On OpenWrt: use `logread -f` to keep an eye on the PXE boot progress.
+
+On the initiator PXE boot menu: Remove `quiet` from the kernel cmdline to see more debug output during boot.
 
 
 ## How it works
