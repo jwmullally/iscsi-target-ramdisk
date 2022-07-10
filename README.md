@@ -68,7 +68,7 @@ You'll mainly just want to update:
 
   * `boot_partition`
 
-    * Run `blkid` and replace the UUID with the one from your partition containing `/boot`
+    * Run `sudo blkid` and replace the UUID with the one from your partition containing `/boot`.
 
   * `boot_path`
 
@@ -76,16 +76,26 @@ You'll mainly just want to update:
 
   * `cmdline_default`
 
-    * Find your default Kernel command line from your grub config or `/proc/cmdline`. Note, this is ignored when it can be read fully from `/boot/loader/entries` files.
+    * Find your default Kernel command line from `/etc/default/grub` or `/proc/cmdline`. Note, this is ignored when it can be read fully from the `/boot/loader/entries` files.
 
 * [`src/rootfs/etc/uci-defaults/90-custom-tgt`](src/rootfs/etc/uci-defaults/90-custom-tgt)
 
   * Update the list of of block devices to share as iSCSI LUNs.
 
+And review:
+
+* [`src/dracut.conf`](src/dracut.conf)
+
+* [`src/bootloaderspec-entry.conf`](src/bootloaderspec-entry.conf)
+
+* [`src/grub-entry.sh`](src/grub-entry.sh)
+
+Then proceed with the build and installation steps below.
+
 
 ### Debian/Ubuntu
 
-NOTE: This replaces `initramfs-tools` with `dracut`
+NOTE: This replaces `initramfs-tools` with `dracut`.
 
 ```
 sudo dependencies/debian/build.sh
@@ -114,12 +124,16 @@ sudo ./install.sh
 
 ### Arch
 
+NOTE: This replaces `mkinitcpio` with `dracut`.
+
 ```
 sudo dependencies/archlinux/build.sh
 make images
 sudo dependencies/archlinux/install.sh
 sudo ./install.sh
 ```
+
+You may need to move the generated `/boot/initramfs-X.Y.Z-arch1-1.img` file over `/boot/initramfs-linux.img`.
 
 
 ## Updating
@@ -147,28 +161,28 @@ On the initiator PXE boot menu: Remove `quiet` from the kernel cmdline to see mo
 
 On the target host (containing the OS to remote boot):
 
-* `OpenWrt iSCSI Target` boots with its own kernel and stateless initramfs
-* [`/etc/init.d/bootentries`](src/rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/tftp/bootentries` and creates entries in `/srv/tftp/pxelinux.cfg/default`
-  * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries)
-  * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, the `/boot/vmlinuz-*` with the newest modification time is used along with the matching initramfs file, and a boot entry is created with the `cmdline_default` arguments
-  * An optional password is set for the PXE menu. (Note: this just provides user-facing securiry in the PXELINUX menu; boot files and iSCSI credentials can still be sniffed over the network)
-* `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets
-  * Configuration: [`/etc/uci-defaults/90-custom-tgt`](src/rootfs/etc/uci-defaults/90-custom-tgt)
-* `/etc/init.d/dnsmasq` starts which provides DHCP, DHCP boot and serves `/srv/tftp` via TFTP. The DHCP allocation pool is limited to one available address to limit accidental concurrent booting from separate machines and provide some subnet isolation
-  * Configuration: [`/etc/uci-defaults/90-custom-dhcp`](src/rootfs/etc/uci-defaults/90-custom-dhcp)
+* `OpenWrt iSCSI Target` boots with its own kernel and stateless initramfs.
+* [`/etc/init.d/bootentries`](src/rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/tftp/bootentries` and creates entries in `/srv/tftp/pxelinux.cfg/default`.
+  * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries).
+  * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, the `/boot/vmlinuz-*` with the newest modification time is used along with the matching initramfs file, and a boot entry is created with the `cmdline_default` arguments.
+  * An optional password is set for the PXE menu. (Note: this just provides user-facing securiry in the PXELINUX menu; boot files and iSCSI credentials can still be sniffed over the network).
+* `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets.
+  * Configuration: [`/etc/uci-defaults/90-custom-tgt`](src/rootfs/etc/uci-defaults/90-custom-tgt).
+* `/etc/init.d/dnsmasq` starts which provides DHCP, DHCP boot and serves `/srv/tftp` via TFTP. The DHCP allocation pool is limited to one available address to limit accidental concurrent booting from separate machines and provide some subnet isolation.
+  * Configuration: [`/etc/uci-defaults/90-custom-dhcp`](src/rootfs/etc/uci-defaults/90-custom-dhcp).
 
 On the initiator host (the one to run the OS on):
 
-* The BIOS starts PXE boot
-* The PXE ROM requests and receives a DHCP boot response, pointing to the PXELINUX binary on TFTP
-* PXELINUX is downloaded and executed, which fetches `/srv/tftp/pxelinux.cfg/default` over TFTP and displays the boot options to the user
-* The user selects a kernel to boot
-* PXELINUX fetches the kernel and associated initramfs over TFTP
-* PXELINUX launches the kernel using the included cmdline arguments, which contain the extra `netroot:iscsi` parameters
-* The kernel starts, unpacks and launches the init process in the initramfs
-* The Dracut modules are executed
-* The dracut-network iSCSI module sees the `netroot:scsi:...` arguments and uses them to start an Open iSCSI initiator connection to the `OpenWrt iSCSI Target` host. If successful, the iSCSI target LUN devices now appear as local block devices
-* Booting continues as normal, mounting the root filesystem using the UUID and other regularly supplied cmdline arguments
+* The BIOS starts PXE boot.
+* The PXE ROM requests and receives a DHCP boot response, pointing to the PXELINUX binary on TFTP.
+* PXELINUX is downloaded and executed, which fetches `/srv/tftp/pxelinux.cfg/default` over TFTP and displays the boot options to the user.
+* The user selects a kernel to boot.
+* PXELINUX fetches the kernel and associated initramfs over TFTP.
+* PXELINUX launches the kernel using the included cmdline arguments, which contain the extra `netroot:iscsi` parameters.
+* The kernel starts, unpacks and launches the init process in the initramfs.
+* The Dracut modules are executed.
+* The dracut-network iSCSI module sees the `netroot:scsi:...` arguments and uses them to start an Open iSCSI initiator connection to the `OpenWrt iSCSI Target` host. If successful, the iSCSI target LUN devices now appear as local block devices.
+* Booting continues as normal, mounting the root filesystem using the UUID and other regularly supplied cmdline arguments.
 * The target OS is now fully loaded on the initiator host.
 
 
@@ -233,35 +247,35 @@ select the most recent kernel+initrd files and supply the default cmdline.
 Patches are welcome.
 
 * Test with the sample VMs in [`test`](test) before opening a pull request.
-* Match OpenWrt structure and conventions as much as possible
+* Match OpenWrt structure and conventions as much as possible.
 
 
 ## TODO
 
-* Uninstall script
+* Uninstall script.
 
-* Debian: Disable default open-iscsi service by default during normal use to prevent error
+* Debian: Disable default open-iscsi service by default during normal use to prevent error.
 
 * [MACSEC L2 encryption](https://developers.redhat.com/blog/2016/10/14/macsec-a-different-solution-to-encrypt-network-traffic/) or iSCSI + TLS
 
-* Password encrypted PXELINUX configuration and TFTP files
+* Password encrypted PXELINUX configuration and TFTP files.
 
 * SecureBoot. ([Unlikely?](https://forum.openwrt.org/t/x86-uefi-secure-boot-installation/115666)). Provide instructions for self-signed images with `mokutil`?
 
-* UEFI PXE binaries
+* UEFI PXE binaries.
 
-* Assign static IP to initiator's network interface instead of NetworkManager managed DHCP
+* Assign static IP to initiator's network interface instead of NetworkManager managed DHCP.
 
-* Sort "OpenWrt iSCSI Target" entry under OS entries in bootloader menu
+* Sort "OpenWrt iSCSI Target" entry under OS entries in bootloader menu.
 
-* Change iSCSI from userspace TGT to in-kernel LIO ([Example](doc/rough_comparison_lio_vs_tgtd.png))
+* Change iSCSI from userspace TGT to in-kernel LIO ([Example](doc/rough_comparison_lio_vs_tgtd.png)).
 
 
 ## Reference
 
-- [dracut.conf(5)](http://man7.org/linux/man-pages/man5/dracut.conf.5.html)
-- [dracut.cmdline(7)](http://man7.org/linux/man-pages/man7/dracut.cmdline.7.html)
-- [BootLoaderSpec](https://www.freedesktop.org/wiki/Specifications/BootLoaderSpec/)
+- [dracut.conf(5)](http://man7.org/linux/man-pages/man5/dracut.conf.5.html).
+- [dracut.cmdline(7)](http://man7.org/linux/man-pages/man7/dracut.cmdline.7.html).
+- [BootLoaderSpec](https://www.freedesktop.org/wiki/Specifications/BootLoaderSpec/).
 
 
 ## Author

@@ -54,6 +54,7 @@ images: $(BUILD_DIR)/$(BUILDER) rootfs-contents
 
 
 iso:
+	echo "Generating ISO / USB boot image"
 	src/create-boot-iso.sh \
 		$(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME).iso \
 		"OpenWrt-$(EXTRA_IMAGE_NAME)" \

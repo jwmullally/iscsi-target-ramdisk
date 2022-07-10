@@ -7,6 +7,6 @@ cd openwrt-iscsi-target-ramdisk
 
 dependencies/archlinux/build.sh
 make images
-make iso
+#make iso
 dependencies/archlinux/install.sh
 ./install.sh
