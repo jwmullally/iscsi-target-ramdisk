@@ -22,7 +22,7 @@ you want.
 * On the computer where this is installed (target), power on and select
   `OpenWrt iSCSI Target` from the boot menu.
 
-* Power on the other computer (initiator), use BIOS's built-in PXE boot
+* Power on the other computer (initiator), select the BIOS's built-in PXE boot
 
 * The target OS should now be running on the initiator
 
