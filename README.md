@@ -43,7 +43,7 @@ If you want to share network/WiFi connections from the target to the initiator:
 
 ## Precautions
 
-Try this out first with the VM images in `test`.
+Try this out first with the VM images in [`test`](test).
 
 *!! Beta software - may prevent your computer from booting. Be comfortable with editing files in /boot,
 and have a backup bootdisk/CD/USB in case anything goes wrong*
@@ -57,6 +57,8 @@ settings of the network interface carrying the iSCSI traffic can have the same e
 
 
 ## Installation
+
+The only changes needed for your OS are to add Dracut iSCSI initiator support to your initramfs, and to create a boot entry for the `OpenWrt iSCSI Target` kernel and initramfs. The [`install.sh`](install.sh) script takes care of this.
 
 Review and adjust the configuration files in this project to match your system.
 
@@ -143,6 +145,35 @@ On the initiator PXE boot menu: Remove `quiet` from the kernel cmdline to see mo
 
 ## How it works
 
+On the target host (containing the OS to remote boot):
+
+* `OpenWrt iSCSI Target` boots with its own kernel and stateless initramfs
+* [`/etc/init.d/bootentries`](src/rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/tftp/bootentries` and creates entries in `/srv/tftp/pxelinux.cfg/default`
+  * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries)
+  * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, the `/boot/vmlinuz-*` with the newest modification time is used along with the matching initramfs file, and a boot entry is created with the `cmdline_default` arguments
+  * An optional password is set for the PXE menu. (Note: this just provides user-facing securiry in the PXELINUX menu; boot files and iSCSI credentials can still be sniffed over the network)
+* `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets
+  * Configuration: [`/etc/uci-defaults/90-custom-tgt`](src/rootfs/etc/uci-defaults/90-custom-tgt)
+* `/etc/init.d/dnsmasq` starts which provides DHCP, DHCP boot and serves `/srv/tftp` via TFTP. The DHCP allocation pool is limited to one available address to limit accidental concurrent booting from separate machines and provide some subnet isolation
+  * Configuration: [`/etc/uci-defaults/90-custom-dhcp`](src/rootfs/etc/uci-defaults/90-custom-dhcp)
+
+On the initiator host (the one to run the OS on):
+
+* The BIOS starts PXE boot
+* The PXE ROM requests and receives a DHCP boot response, pointing to the PXELINUX binary on TFTP
+* PXELINUX is downloaded and executed, which fetches `/srv/tftp/pxelinux.cfg/default` over TFTP and displays the boot options to the user
+* The user selects a kernel to boot
+* PXELINUX fetches the kernel and associated initramfs over TFTP
+* PXELINUX launches the kernel using the included cmdline arguments, which contain the extra `netroot:iscsi` parameters
+* The kernel starts, unpacks and launches the init process in the initramfs
+* The Dracut modules are executed
+* The dracut-network iSCSI module sees the `netroot:scsi:...` arguments and uses them to start an Open iSCSI initiator connection to the `OpenWrt iSCSI Target` host. If successful, the iSCSI target LUN devices now appear as local block devices
+* Booting continues as normal, mounting the root filesystem using the UUID and other regularly supplied cmdline arguments
+* The target OS is now fully loaded on the initiator host.
+
+
+## Background
+
 Typical Linux distributions use a simple boot loader (e.g. GRUB) to load the Linux
 Kernel and an [Initial ramdisk](https://en.wikipedia.org/wiki/Initial_ramdisk)
 root file system. The purpose of this root filesystem is to do everything
@@ -175,7 +206,7 @@ with just enough functionality to share the drives via iSCSI and serve the
 kernels via PXE. It is stateless and runs completely from RAM, so the iSCSI
 initiator has exclusive read/write access to the drive.
 
-The seperate OpenWrt system also means you don't have to reconfigure your OS to
+The separate OpenWrt system also means you don't have to reconfigure your OS to
 do all this sharing, which can be complicated and interfere with regular
 operation.
 
@@ -211,7 +242,9 @@ Patches are welcome.
 
 * Debian: Disable default open-iscsi service by default during normal use to prevent error
 
-* [MACSEC L2 encryption](https://developers.redhat.com/blog/2016/10/14/macsec-a-different-solution-to-encrypt-network-traffic/)
+* [MACSEC L2 encryption](https://developers.redhat.com/blog/2016/10/14/macsec-a-different-solution-to-encrypt-network-traffic/) or iSCSI + TLS
+
+* Password encrypted PXELINUX configuration and TFTP files
 
 * SecureBoot. ([Unlikely?](https://forum.openwrt.org/t/x86-uefi-secure-boot-installation/115666)). Provide instructions for self-signed images with `mokutil`?
 
