@@ -152,11 +152,24 @@ sudo ./update.sh
 
 ## Troubleshooting
 
-On OpenWrt: Check `/srv/tftp/pxelinux.cfg/default` and `/srv/tftp/bootentries` contain the expected kernels. Update `/etc/config/bootentries` and rerun `/etc/init.d/bootentries restart` to try find them again.
+On OpenWrt:
 
-On OpenWrt: use `logread -f` to keep an eye on the PXE boot progress.
+* Check `/srv/tftp/pxelinux.cfg/default` and `/srv/tftp/bootentries` contain the expected kernels.
 
-On the initiator PXE boot menu: Remove `quiet` from the kernel cmdline to see more debug output during boot.
+  * Update `/etc/config/bootentries` and rerun `/etc/init.d/bootentries restart` to try find them again.
+
+* Use `logread -f` to keep an eye on the PXE boot TFTP requests.
+
+* Use `tcpdump` to check for incoming DHCP and TFTP requests
+
+* In `/srv/tftp/pxelinux.cfg/default`, set `ALLOWOPTIONS=1` to enable editing cmdline options.
+
+* Check the console or `dmesg` output for Ethernet interface corruption warnings (e.g. some
+  `e1000e` models have flaky offloading that needs to be disabled with `ethtool`)
+
+On the initiator PXE boot menu:
+
+* Remove `quiet` from the kernel cmdline to see more debug output during boot.
 
 
 ## How it works
@@ -167,7 +180,7 @@ On the target host (containing the OS to remote boot):
 * [`/etc/init.d/bootentries`](src/rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/tftp/bootentries` and creates entries in `/srv/tftp/pxelinux.cfg/default`.
   * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries).
   * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, the `/boot/vmlinuz-*` with the newest modification time is used along with the matching initramfs file, and a boot entry is created with the `cmdline_default` arguments.
-  * An optional password is set for the PXE menu. (Note: this just provides user-facing securiry in the PXELINUX menu; boot files and iSCSI credentials can still be sniffed over the network).
+  * An optional password is set for the PXE menu. (Note: this just provides user-facing securiry in the PXELINUX menu to prevent accidental booting; boot files and iSCSI credentials can still be sniffed over the network).
 * `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets.
   * Configuration: [`/etc/uci-defaults/90-custom-tgt`](src/rootfs/etc/uci-defaults/90-custom-tgt).
 * `/etc/init.d/dnsmasq` starts which provides DHCP, DHCP boot and serves `/srv/tftp` via TFTP. The DHCP allocation pool is limited to one available address to limit accidental concurrent booting from separate machines and provide some subnet isolation.

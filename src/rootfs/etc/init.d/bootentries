@@ -26,7 +26,8 @@ DEFAULT menu.c32
 #DEFAULT vesamenu.c32
 PROMPT 0
 MENU TITLE $menu_title
-#ALLOWOPTIONS 0
+# Set to 1 to allow editing of cmdline options
+ALLOWOPTIONS 0
 EOF
 
 	rm -rf /srv/tftp/bootentries
