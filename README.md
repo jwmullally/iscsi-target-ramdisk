@@ -158,9 +158,10 @@ On OpenWrt:
 
   * Update `/etc/config/bootentries` and rerun `/etc/init.d/bootentries restart` to try find them again.
 
-* Use `logread -f` to keep an eye on the PXE boot TFTP requests.
+* Use `logread -f` to keep an eye on the DHCP and TFTP requests.
 
-* Use `tcpdump` to check for incoming DHCP and TFTP requests
+* Use `tcpdump port 81` to check for incoming PXE related HTTP requests
+  (unfortunately OpenWrt uHTTPd does not support request logging).
 
 * In `/srv/tftp/pxelinux.cfg/default`, set `ALLOWOPTIONS=1` to enable editing cmdline options.
 
