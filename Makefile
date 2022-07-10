@@ -30,14 +30,29 @@ rootfs-contents: $(BUILD_DIR)/downloads
 	cp -f $(BUILD_DIR)/$(BUILDER)/target/linux/generic/other-files/init $(BUILD_DIR)/rootfs/
 	mkdir -p $(BUILD_DIR)/rootfs//srv/tftp/
 	cd $(BUILD_DIR)/downloads/syslinux-6.03/bios/ && cp -f \
-		core/pxelinux.0 \
+		core/lpxelinux.0 \
 		com32/elflink/ldlinux/ldlinux.c32 \
 		com32/menu/menu.c32 \
 		com32/menu/vesamenu.c32 \
 		com32/lib/libcom32.c32 \
 		com32/libutil/libutil.c32 \
-		../../../rootfs/srv/tftp/
-
+		../../../rootfs/srv/tftp/bios
+	cd $(BUILD_DIR)/downloads/syslinux-6.03/efi32/ && cp -f \
+		efi/syslinux.efi \
+		com32/elflink/ldlinux/ldlinux.e32 \
+		com32/menu/menu.c32 \
+		com32/menu/vesamenu.c32 \
+		com32/lib/libcom32.c32 \
+		com32/libutil/libutil.c32 \
+		../../../rootfs/srv/tftp/efi_x86_32
+	cd $(BUILD_DIR)/downloads/syslinux-6.03/efi64/ && cp -f \
+		efi/syslinux.efi \
+		com32/elflink/ldlinux/ldlinux.e64 \
+		com32/menu/menu.c32 \
+		com32/menu/vesamenu.c32 \
+		com32/lib/libcom32.c32 \
+		com32/libutil/libutil.c32 \
+		../../../rootfs/srv/tftp/efi_x86_64
 
 $(BUILD_DIR)/$(BUILDER): $(BUILD_DIR)/downloads
 	cd $(BUILD_DIR) && tar -xf downloads/$(BUILDER).tar.xz

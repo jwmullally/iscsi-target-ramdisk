@@ -1,10 +1,21 @@
 #!/bin/sh
 
-# Allow remote admin from WAN ports.
+# Provide easy access to some useful commands
+# The 
 
 uci -q batch << EOF
 add luci command
 set luci.@command[-1].name="iSCSI Target Status"
 set luci.@command[-1].command="/etc/init.d/tgt show"
+
+add luci command
+set luci.@command[-1].name='Enable TFTP Access'
+set luci.@command[-1].command='/etc/init.d/tftp_access start'
+
+add luci command
+set luci.@command[-1].name='Disable TFTP Access'
+set luci.@command[-1].command='/etc/init.d/tftp_access stop'
+set luci.@command[-1].public='1'
+
 commit luci
 EOF

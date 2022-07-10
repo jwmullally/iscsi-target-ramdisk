@@ -1,8 +1,6 @@
 #!/bin/sh
 set -ex
 
-# For UEFI + Secure Boot, add "--boot uefi"
-
 virt-install \
     --connect qemu:///system \
     --name test-target-debian \

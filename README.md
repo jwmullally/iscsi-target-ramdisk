@@ -4,7 +4,7 @@
 
 This simple project builds a preconfigured x86_64 OpenWrt ramdisk image that serves 
 your Linux kernels via PXE and disk drives via iSCSI, allowing you to boot
-your OS over the network on another computer using Dracut `netroot=iscsi:`.
+your OS over the network on another computer using Dracut `netroot=iscsi:...`.
 
 For example, you can run your laptop OS on your more powerful desktop while
 still having access to all your laptop's files and programs.
@@ -185,6 +185,7 @@ On the target host (containing the OS to remote boot):
   * Configuration: [`/etc/uci-defaults/90-custom-tgt`](src/rootfs/etc/uci-defaults/90-custom-tgt).
 * `/etc/init.d/dnsmasq` starts which provides DHCP, DHCP boot and serves `/srv/tftp` via TFTP. The DHCP allocation pool is limited to one available address to limit accidental concurrent booting from separate machines and provide some subnet isolation.
   * Configuration: [`/etc/uci-defaults/90-custom-dhcp`](src/rootfs/etc/uci-defaults/90-custom-dhcp).
+* [`/etc/init.d/tftp_access`](src/rootfs/etc/init.d/tftp_access) starts and adds uHTTPd server configuration for `/srv/tftp`.
 
 On the initiator host (the one to run the OS on):
 
@@ -192,11 +193,11 @@ On the initiator host (the one to run the OS on):
 * The PXE ROM requests and receives a DHCP boot response, pointing to the PXELINUX binary on TFTP.
 * PXELINUX is downloaded and executed, which fetches `/srv/tftp/pxelinux.cfg/default` over TFTP and displays the boot options to the user.
 * The user selects a kernel to boot.
-* PXELINUX fetches the kernel and associated initramfs over TFTP.
-* PXELINUX launches the kernel using the included cmdline arguments, which contain the extra `netroot:iscsi` parameters.
+* PXELINUX fetches the kernel and associated initramfs over HTTP.
+* PXELINUX launches the kernel using the included cmdline arguments, which contain the extra `netroot:iscsi:...` parameters.
 * The kernel starts, unpacks and launches the init process in the initramfs.
 * The Dracut modules are executed.
-* The dracut-network iSCSI module sees the `netroot:scsi:...` arguments and uses them to start an Open iSCSI initiator connection to the `OpenWrt iSCSI Target` host. If successful, the iSCSI target LUN devices now appear as local block devices.
+* The dracut-network iSCSI module sees the `netroot:iscsi:...` arguments and uses them to start an Open iSCSI initiator connection to the `OpenWrt iSCSI Target` host. If successful, the iSCSI target LUN devices now appear as local block devices.
 * Booting continues as normal, mounting the root filesystem using the UUID and other regularly supplied cmdline arguments.
 * The target OS is now fully loaded on the initiator host.
 
@@ -277,13 +278,13 @@ Patches are welcome.
 
 * SecureBoot. ([Unlikely?](https://forum.openwrt.org/t/x86-uefi-secure-boot-installation/115666)). Provide instructions for self-signed images with `mokutil`?
 
-* UEFI PXE binaries.
-
 * Assign static IP to initiator's network interface instead of NetworkManager managed DHCP.
 
 * Sort "OpenWrt iSCSI Target" entry under OS entries in bootloader menu.
 
 * Change iSCSI from userspace TGT to in-kernel LIO ([Example](doc/rough_comparison_lio_vs_tgtd.png)).
+
+* Hide `rd.iscsi.password` credentials from `/proc/cmdline`
 
 
 ## Reference

@@ -28,4 +28,9 @@ uci set bootentries.@bootentries[0].cmdline_remove="quiet"
 uci set bootentries.@bootentries[0].menu_title="OpenWrt PXE TFTP Boot Menu"
 uci set bootentries.@bootentries[0].menu_password="pass1234"
 
+# PXE file path prefix.
+# We serve the boot files with HTTP instead of simpler TFTP due to a severe
+# performance bug in UEFI syslinux's TFTP transfer code.
+uci set bootentries.@bootentries[0].pxe_path_prefix="http://$(uci get network.lan.ipaddr):81/"
+
 uci commit bootentries

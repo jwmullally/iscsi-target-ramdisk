@@ -5,14 +5,47 @@
 # Limit DHCP assignments to 1 IP, to prevent accidental concurrent booting
 # of multiple clients.
 
-uci -q batch << EOF
+uci batch << EOF
 set dhcp.@dnsmasq[0].local='/iscsi/'
 set dhcp.@dnsmasq[0].domain='iscsi'
+set dhcp.@dnsmasq[0].logdhcp='1'
 set dhcp.@dnsmasq[0].enable_tftp='1'
 set dhcp.@dnsmasq[0].tftp_root='/srv/tftp'
-set dhcp.@dnsmasq[0].dhcp_boot='pxelinux.0'
+#set dhcp.@dnsmasq[0].dhcp_boot='bios/lpxelinux.0'
 set dhcp.lan.start='2'
 set dhcp.lan.limit='1'
 set dhcp.lan.force='1'
+
+add dhcp match
+set dhcp.@match[-1].networkid='bios'
+set dhcp.@match[-1].match='60,PXEClient:Arch:00000'
+
+add dhcp match
+set dhcp.@match[-1].networkid='efi_x86_32'
+set dhcp.@match[-1].match='60,PXEClient:Arch:00006'
+
+add dhcp match
+set dhcp.@match[-1].networkid='efi_x86_64'
+set dhcp.@match[-1].match='60,PXEClient:Arch:00007'
+
+add dhcp match
+set dhcp.@match[-1].networkid='efi_x86_64'
+set dhcp.@match[-1].match='60,PXEClient:Arch:00009'
+
+add dhcp boot
+set dhcp.@boot[-1].filename='tag:bios,bios/lpxelinux.0'
+set dhcp.@boot[-1].serveraddress=$(uci get network.lan.ipaddr)
+set dhcp.@boot[-1].servername=$(uci get system.@system[0].hostname)
+
+add dhcp boot
+set dhcp.@boot[-1].filename='tag:efi_x86_32,efi_x86_32/syslinux.efi'
+set dhcp.@boot[-1].serveraddress=$(uci get network.lan.ipaddr)
+set dhcp.@boot[-1].servername=$(uci get system.@system[0].hostname)
+
+add dhcp boot
+set dhcp.@boot[-1].filename='tag:efi_x86_64,efi_x86_64/syslinux.efi'
+set dhcp.@boot[-1].serveraddress=$(uci get network.lan.ipaddr)
+set dhcp.@boot[-1].servername=$(uci get system.@system[0].hostname)
+
 commit dhcp
 EOF

@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+
+# This service provides a convenient way of enabling and disabling 
+# remote access to the TFTP/HTTP boot files.
+
+START=90
+USE_PROCD=1
+
+start_service() {
+
+	uci set dhcp.@dnsmasq[0].enable_tftp='1'
+	uci commit dhcp
+	/etc/init.d/dnsmasq reload
+
+	uci set uhttpd.srv_tftp='uhttpd'
+	uci set uhttpd.srv_tftp.home='/srv/tftp/'
+	uci set uhttpd.srv_tftp.listen_http="$(uci get network.lan.ipaddr):81"
+	uci commit uhttpd
+	/etc/init.d/uhttpd reload
+
+}
+
+stop_service() {
+
+	uci set dhcp.@dnsmasq[0].enable_tftp='0'
+	uci commit dhcp
+	/etc/init.d/dnsmasq reload
+
+	uci del uhttpd.srv_tftp || true
+	uci commit uhttpd
+	/etc/init.d/uhttpd reload
+
+}

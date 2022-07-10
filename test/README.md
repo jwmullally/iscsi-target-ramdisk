@@ -37,13 +37,12 @@ to the initiator VM without interference from the host's DHCP server.
 
 ### UEFI vs Legacy BIOS boot
 
-The example VMs use CSM boot by default, as libvirt's UEFI implementation
-automatically enables SecureBoot.
+The example VMs use CSM boot by default.
 
-If you want to use UEFI anyway for testing, do the following:
+If you want to use UEFI for testing, do the following:
 
 * `mk-vm-test-*.sh`: 
 
-  * Add `--boot UEFI`
+  * Add `--boot loader=/usr/share/edk2/ovmf/OVMF_CODE.fd,loader.readonly=yes,loader.type=pflash,nvram.template=/usr/share/edk2/ovmf/OVMF_VARS.fd,loader_secure=no`
 
 You may have to add EFI partitions in the kickstart/preseed files.

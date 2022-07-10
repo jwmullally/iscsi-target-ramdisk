@@ -11,7 +11,8 @@ validate_bootentries_section() {
 		'cmdline_iscsi:string' \
 		'cmdline_remove:string' \
 		'menu_title:string:OpenWrt PXE TFTP Boot Menu' \
-		'menu_password:string'
+		'menu_password:string' \
+		'pxe_path_prefix:string'
 }
 
 bootentries_config() {
@@ -59,8 +60,8 @@ EOF
 				if [ -n "$menu_password" ]; then
 					echo -e "\tMENU PASSWD $menu_password" >> /srv/tftp/pxelinux.cfg/default
 				fi
-				echo -e "\tKERNEL $KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
-				echo -e "\tAPPEND initrd=$INITRD_IMG $OPTIONS $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
+				echo -e "\tKERNEL $pxe_path_prefix$KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
+				echo -e "\tAPPEND initrd=$pxe_path_prefix$INITRD_IMG $OPTIONS $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
 				echo -e "\tSYSAPPEND 0x2" >> /srv/tftp/pxelinux.cfg/default
 				entry_found="1"
 			fi
@@ -100,8 +101,8 @@ EOF
 		if [ -n "$menu_password" ]; then
 			echo -e "\tMENU PASSWD $menu_password" >> /srv/tftp/pxelinux.cfg/default
 		fi
-		echo -e "\tKERNEL $KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
-		echo -e "\tAPPEND initrd=$INITRD_IMG $cmdline_default $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
+		echo -e "\tKERNEL $pxe_path_prefix$KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
+		echo -e "\tAPPEND initrd=$pxe_path_prefix$INITRD_IMG $cmdline_default $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
 		echo -e "\tSYSAPPEND 0x2" >> /srv/tftp/pxelinux.cfg/default
 	fi
 	umount /mnt
