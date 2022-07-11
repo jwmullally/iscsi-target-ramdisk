@@ -6,6 +6,6 @@ pacman --sync --needed --noconfirm \
 	dracut \
 	open-iscsi
 
-pacman --remove --recursive --cascade --nosave --noconfirm \
+pacman --remove --noconfirm \
 	mkinitcpio \
 	|| echo "No package to remove"

@@ -37,14 +37,15 @@ EOF
 	umount -f /mnt || true
 	mount -o ro "$boot_partition" /mnt || return 1
 
+	entries_found="0"
 	if [ -d "/mnt/$boot_path/loader/entries" ]; then
+		echo "Searching for BootLoaderSpec files in /mnt/$boot_path/loader/entries ..."
 		# Create an menu entry for every BootLoaderSpec file
-		entry_found="0"
 		for entry in "/mnt/$boot_path/loader/entries"/*.conf; do
 			TITLE="$(sed -n 's/^title[ \t]*\(.*\)/\1/p' $entry)"
 			KERNEL_PATH="$(sed -n 's/^linux[ \t]*\(.*\)/\1/p' $entry)"
 			INITRD_PATH="$(sed -n 's/^initrd[ \t]*\(.*\)/\1/p' $entry)"
-			OPTIONS="$(sed -n 's/^options[ \t]*\(.*\)/\1/p' $entry)"
+			OPTIONS="$(sed -n 's/^options[ \t]*\(.*\)/\1/p' $entry | sed 's/ quiet//g')"
 			if [ -n "$TITLE" -a -n "$KERNEL_PATH" -a -n "$INITRD_PATH" ]; then
 				LABEL="$(basename "$entry")"
 				mkdir -p "/srv/tftp/bootentries/$LABEL"
@@ -63,49 +64,48 @@ EOF
 				echo -e "\tKERNEL $pxe_path_prefix$KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
 				echo -e "\tAPPEND initrd=$pxe_path_prefix$INITRD_IMG $OPTIONS $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
 				echo -e "\tSYSAPPEND 0x2" >> /srv/tftp/pxelinux.cfg/default
-				entry_found="1"
+				entries_found="$((entries_found+1))"
 			fi
 		done
-		if [ "$entry_found" = "0" ]; then
-			echo "Could not find any BootLoaderSpec kernel images for PXE TFTP boot"
-			return 1
-		fi
 	else
-		# Find latest Kernel image
-		KERNEL_FILE="$(ls -t "/mnt/$boot_path" | grep 'vmlinuz-.*' | grep -v ".hmac$" | head -n1)"
-		if [ -z "$KERNEL_FILE" ]; then
-			echo "Could not find any kernel images for PXE TFTP boot"
-			return 1
-		fi
-		KERNEL_VERSION="$(echo $KERNEL_FILE | sed 's/vmlinuz-//g')"
-		# Find matching Initramfs image
-		if [ -f "/mnt/$boot_path/initramfs-$KERNEL_VERSION.img" ]; then
-			INITRD_FILE="initramfs-$KERNEL_VERSION.img"
-		elif [ -f "/mnt/$boot_path/initrd.img-$KERNEL_VERSION" ]; then
-			INITRD_FILE="initrd.img-$KERNEL_VERSION"
-		else
-			echo "Could not find any initramfs image for PXE TFTP boot matching kernel $KERNEL_FILE"
-			return 1
-		fi
-		LABEL="$KERNEL_FILE"
-		mkdir -p "/srv/tftp/bootentries/$LABEL"
-		KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
-		INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
-		cp "/mnt/$boot_path/$KERNEL_FILE" "/srv/tftp/$KERNEL_IMG"
-		cp "/mnt/$boot_path/$INITRD_FILE" "/srv/tftp/$INITRD_IMG"
-		chmod 644 "/srv/tftp/$KERNEL_IMG"
-		chmod 644 "/srv/tftp/$INITRD_IMG"
-		echo -e "" >> /srv/tftp/pxelinux.cfg/default
-		echo -e "label $LABEL" >> /srv/tftp/pxelinux.cfg/default
-		echo -e "\tMENU LABEL $LABEL" >> /srv/tftp/pxelinux.cfg/default
-		if [ -n "$menu_password" ]; then
-			echo -e "\tMENU PASSWD $menu_password" >> /srv/tftp/pxelinux.cfg/default
-		fi
-		echo -e "\tKERNEL $pxe_path_prefix$KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
-		echo -e "\tAPPEND initrd=$pxe_path_prefix$INITRD_IMG $cmdline_default $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
-		echo -e "\tSYSAPPEND 0x2" >> /srv/tftp/pxelinux.cfg/default
+		echo "Searching for kernels in /mnt/$boot_path ..."
+		for KERNEL_FILE in $(ls -t "/mnt/$boot_path" | grep 'vmlinuz-.*' | grep -v ".hmac$"); do
+			KERNEL_VERSION="$(echo $KERNEL_FILE | sed 's/vmlinuz-//g')"
+			# Find matching Initramfs image
+			if [ -f "/mnt/$boot_path/initramfs-$KERNEL_VERSION.img" ]; then
+				INITRD_FILE="initramfs-$KERNEL_VERSION.img"
+			elif [ -f "/mnt/$boot_path/initrd.img-$KERNEL_VERSION" ]; then
+				INITRD_FILE="initrd.img-$KERNEL_VERSION"
+			else
+				echo "Warning: could not find any initramfs image for PXE TFTP boot matching kernel $KERNEL_FILE, skipping..."
+				continue
+			fi
+			LABEL="$KERNEL_FILE"
+			mkdir -p "/srv/tftp/bootentries/$LABEL"
+			KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
+			INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
+			cp "/mnt/$boot_path/$KERNEL_FILE" "/srv/tftp/$KERNEL_IMG"
+			cp "/mnt/$boot_path/$INITRD_FILE" "/srv/tftp/$INITRD_IMG"
+			chmod 644 "/srv/tftp/$KERNEL_IMG"
+			chmod 644 "/srv/tftp/$INITRD_IMG"
+			echo -e "" >> /srv/tftp/pxelinux.cfg/default
+			echo -e "label $LABEL" >> /srv/tftp/pxelinux.cfg/default
+			echo -e "\tMENU LABEL $LABEL" >> /srv/tftp/pxelinux.cfg/default
+			if [ -n "$menu_password" ]; then
+				echo -e "\tMENU PASSWD $menu_password" >> /srv/tftp/pxelinux.cfg/default
+			fi
+			echo -e "\tKERNEL $pxe_path_prefix$KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
+			echo -e "\tAPPEND initrd=$pxe_path_prefix$INITRD_IMG $cmdline_default $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
+			echo -e "\tSYSAPPEND 0x2" >> /srv/tftp/pxelinux.cfg/default
+			entries_found="$((entries_found+1))"
+		done
 	fi
 	umount /mnt
+	if [ "$entries_found" = "0" ]; then
+		echo "Could not find any boot entries for PXE TFTP boot"
+		return 1
+	fi
+	echo "Found $entries_found boot entries"
 }
 
 reload_service() {

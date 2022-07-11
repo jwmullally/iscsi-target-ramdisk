@@ -1,0 +1,15 @@
+Building the test VM
+
+Download and boot the Arch Linux install ISO:
+
+  ./mk-vm-test-archlinux.sh
+
+In the VM:
+scp in this directory
+
+  archinstall --config user_configuration.json --disk-layout user_disk_layout.json
+
+(set root password to "archlinux")
+
+  ./postinstall-in-vm.sh
+

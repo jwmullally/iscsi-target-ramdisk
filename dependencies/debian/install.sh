@@ -7,3 +7,7 @@ apt-get install --yes --no-install-recommends \
 	dracut \
 	dracut-network \
 	open-iscsi
+
+apt-get remove --yes \
+	initramfs-tools \
+	initramfs-tools-core

@@ -5,6 +5,8 @@ HAS_BLS="$(test -d /boot/loader/entries && echo 1 || echo 0)"
 HAS_OSTREE="$(test -d /ostree && echo 1 || echo 0)"
 HAS_GRUB1="$(test -f /boot/grub/grub.cfg && echo 1 || echo 0)"
 HAS_GRUB2="$(test -f /boot/grub2/grub.cfg && echo 1 || echo 0)"
+HAS_SYSTEMD="$(test -f /usr/bin/systemctl && echo 1 || echo 0)"
+HAS_NM="$(test -f /usr/bin/nmcli && echo 1 || echo 0)"
 
 enable_dracut_iscsi() {
     echo "Enabling iSCSI Initiator support in Dracut initramfs"
@@ -47,7 +49,18 @@ preserve_kernel_cmdline() {
     fi
 }
 
+set_bootif_unmanaged() {
+    if [ "$HAS_NM" = "1" -a "$HAS_SYSTEMD" = "1" ]; then
+        echo "Installing script to set iSCSI BOOTIF as unmanaged in NetworkManager"
+        # Post install
+        install -m 0644 -T src/bootif-nm-unmanaged.service /etc/systemd/system/bootif-nm-unmanaged.service
+        systemctl daemon-reload
+        systemctl enable bootif-nm-unmanaged
+    fi
+}
+
 enable_dracut_iscsi
 install_boot_entry
 preserve_kernel_cmdline
+set_bootif_unmanaged
 ./update.sh
