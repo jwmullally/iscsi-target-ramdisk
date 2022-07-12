@@ -130,7 +130,7 @@ sudo dependencies/archlinux/install.sh
 sudo ./install.sh
 ```
 
-NOTE: This replaces `mkinitcpio` with [`Dracut`](https://wiki.archlinux.org/title/Dracut). (See [iSCSI/Boot](https://wiki.archlinux.org/title/ISCSI/Boot) for instructions on using `mkinitcpio`.
+NOTE: This replaces `mkinitcpio` with [`Dracut`](https://wiki.archlinux.org/title/Dracut). (See [here](https://wiki.archlinux.org/title/ISCSI/Boot) for instructions on using `mkinitcpio`).
 
 After the install, you will need to move the Dracut generated initramfs into place. This can be done automatically for future kernel installs with [`dracut-hook`](https://aur.archlinux.org/packages/dracut-hook).
 
@@ -225,8 +225,9 @@ To share the OS drives, we can't use the original OS itself, as only one system 
 
 Patches are welcome.
 
-* Test with the sample VMs in [`test`](test) before opening a pull request.
-* Match OpenWrt structure and conventions as much as possible.
+Test with the sample VMs in [`test`](test) before opening a pull request.
+
+Match OpenWrt structure and conventions as much as possible.
 
 
 ## TODO
@@ -241,21 +242,22 @@ Patches are welcome.
 
 * SecureBoot. ([Unlikely?](https://forum.openwrt.org/t/x86-uefi-secure-boot-installation/115666)). Provide instructions for self-signed images with `mokutil`?
 
-* Assign static IP to initiator's network interface instead of NetworkManager managed DHCP.
-
 * Sort "OpenWrt iSCSI Target" entry under OS entries in bootloader menu.
 
-* Change iSCSI from userspace TGT to in-kernel LIO ([Example](doc/rough_comparison_lio_vs_tgtd.png)).
+* Change iSCSI from userspace TGT to in-kernel LIO ([rough comparison](doc/rough_comparison_lio_vs_tgtd.png)).
 
 * Hide `rd.iscsi.password` credentials from `/proc/cmdline`.
 
 
 ## Reference
 
-* [bootup - System bootup process](https://www.freedesktop.org/software/systemd/man/bootup.html).
-- [dracut.cmdline(7)](http://man7.org/linux/man-pages/man7/dracut.cmdline.7.html).
-- [dracut.conf(5)](http://man7.org/linux/man-pages/man5/dracut.conf.5.html).
-- [BootLoaderSpec](https://www.freedesktop.org/wiki/Specifications/BootLoaderSpec/).
+[bootup - System bootup process](https://www.freedesktop.org/software/systemd/man/bootup.html).
+
+[dracut.cmdline(7)](http://man7.org/linux/man-pages/man7/dracut.cmdline.7.html).
+
+[dracut.conf(5)](http://man7.org/linux/man-pages/man5/dracut.conf.5.html).
+
+[BootLoaderSpec](https://www.freedesktop.org/wiki/Specifications/BootLoaderSpec/).
 
 
 ## Author
