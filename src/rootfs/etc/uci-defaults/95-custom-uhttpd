@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+# Add an extra HTTP server for the PXE files
+
+uci -q batch << EOF
+set uhttpd.srv_tftp='uhttpd'
+set uhttpd.srv_tftp.home='/srv/tftp/'
+set uhttpd.srv_tftp.listen_http="$(uci get network.lan.ipaddr):81"
+
+commit uhttd
+EOF

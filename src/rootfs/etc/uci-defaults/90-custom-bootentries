@@ -19,7 +19,7 @@ uci set bootentries.@bootentries[0].boot_path="/"
 uci set bootentries.@bootentries[0].cmdline_default="ro rhgb root=/dev/disk/by-uuid/5b6621d0-15ae-4c93-b9d6-f2a197a9ef06"
 
 # Specify the dracut-network iSCSI parameters
-uci set bootentries.@bootentries[0].cmdline_iscsi="rd.shell rd.retry=5 rd.iscsi.initiator=iqn.2018-04.org.example:client-host netroot=iscsi:192.168.200.1::::iqn.2018-04.org.example:target-host rd.iscsi.username=testuser1 rd.iscsi.password=pass0001 rd.iscsi.in.username=testuser2 rd.iscsi.in.password=pass0002"
+uci set bootentries.@bootentries[0].cmdline_iscsi="rd.shell rd.retry=5 rd.iscsi.initiator=$(uci get tgt.1.allow_name) netroot=iscsi:$(uci get network.lan.ipaddr)::::$(uci get tgt.1.name) rd.iscsi.username=$(uci get tgt.in_user.user) rd.iscsi.password=$(uci get tgt.in_user.password)"
 
 # Remove these from any found cmdlines
 uci set bootentries.@bootentries[0].cmdline_remove="quiet"

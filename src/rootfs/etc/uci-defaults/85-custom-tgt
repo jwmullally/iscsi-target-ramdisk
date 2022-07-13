@@ -7,22 +7,17 @@ set -e
 uci import tgt <<EOF
 config options 'tgt'
 	option iothreads '16'
+	option logging '1'
 
-config target 1
+config target '1'
 	option name 'iqn.2018-04.org.example:target-host'
 	list allow_name 'iqn.2018-04.org.example:client-host'
 	list allow_address '192.168.200.2'
 
-config account
+config account 'in_user'
 	list target '1'
-	option user 'testuser1'
-	option password 'pass0001'
-
-config account
-	list target '1'
-	option user 'testuser2'
-	option password 'pass0002'
-	option outgoing '1'
+	option user 'iscsiuser'
+	option password "$(cat /dev/urandom | env LC_CTYPE=C tr -dc 023456789ABCDEF | head -c 16)"
 EOF
 
 # Find parent disk from partition UUID
