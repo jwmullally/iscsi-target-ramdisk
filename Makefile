@@ -19,7 +19,15 @@ all: images
 
 $(BUILD_DIR)/downloads:
 	mkdir -p $(BUILD_DIR)/downloads.tmp
+	# OpenWrt Image Builder
 	cd $(BUILD_DIR)/downloads.tmp && curl $(ALL_CURL_OPTS) -O https://downloads.openwrt.org/releases/$(VERSION)/targets/$(BOARD)/$(SUBTARGET)/$(BUILDER).tar.xz
+	# iPXE
+	mkdir -p $(BUILD_DIR)/downloads.tmp/ipxe/x86
+	cd $(BUILD_DIR)/downloads.tmp/ipxe/x86 && curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/ipxe.pxe
+	cd $(BUILD_DIR)/downloads.tmp/ipxe/x86 && curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/undionly.kpxe
+	mkdir -p $(BUILD_DIR)/downloads.tmp/ipxe/x86_64
+	cd $(BUILD_DIR)/downloads.tmp/ipxe/x86_64 && curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/ipxe.efi
+	# ISOLINUX for ISO building
 	cd $(BUILD_DIR)/downloads.tmp && curl $(ALL_CURL_OPTS) -O https://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-6.03.tar.gz && tar -xf syslinux-6.03.tar.gz
 	mv $(BUILD_DIR)/downloads.tmp $(BUILD_DIR)/downloads
 
@@ -28,31 +36,16 @@ rootfs-contents: $(BUILD_DIR)/downloads
 	rm -rf $(BUILD_DIR)/rootfs
 	cp -rv src/rootfs $(BUILD_DIR)/rootfs
 	cp -f $(BUILD_DIR)/$(BUILDER)/target/linux/generic/other-files/init $(BUILD_DIR)/rootfs/
-	mkdir -p $(BUILD_DIR)/rootfs//srv/tftp/
-	cd $(BUILD_DIR)/downloads/syslinux-6.03/bios/ && cp -f \
-		core/lpxelinux.0 \
-		com32/elflink/ldlinux/ldlinux.c32 \
-		com32/menu/menu.c32 \
-		com32/menu/vesamenu.c32 \
-		com32/lib/libcom32.c32 \
-		com32/libutil/libutil.c32 \
-		../../../rootfs/srv/tftp/bios
-	cd $(BUILD_DIR)/downloads/syslinux-6.03/efi32/ && cp -f \
-		efi/syslinux.efi \
-		com32/elflink/ldlinux/ldlinux.e32 \
-		com32/menu/menu.c32 \
-		com32/menu/vesamenu.c32 \
-		com32/lib/libcom32.c32 \
-		com32/libutil/libutil.c32 \
-		../../../rootfs/srv/tftp/efi_x86_32
-	cd $(BUILD_DIR)/downloads/syslinux-6.03/efi64/ && cp -f \
-		efi/syslinux.efi \
-		com32/elflink/ldlinux/ldlinux.e64 \
-		com32/menu/menu.c32 \
-		com32/menu/vesamenu.c32 \
-		com32/lib/libcom32.c32 \
-		com32/libutil/libutil.c32 \
-		../../../rootfs/srv/tftp/efi_x86_64
+	mkdir -p $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86
+	cd $(BUILD_DIR)/downloads/ipxe/x86 && cp -f \
+		ipxe.pxe \
+		undionly.kpxe \
+		../../../rootfs/srv/tftp/ipxe/x86
+	mkdir -p $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86_64
+	cd $(BUILD_DIR)/downloads/ipxe/x86_64 && cp -f \
+		ipxe.efi \
+		../../../rootfs/srv/tftp/ipxe/x86_64
+
 
 $(BUILD_DIR)/$(BUILDER): $(BUILD_DIR)/downloads
 	cd $(BUILD_DIR) && tar -xf downloads/$(BUILDER).tar.xz

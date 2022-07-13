@@ -10,9 +10,9 @@ validate_bootentries_section() {
 		'cmdline_default:string' \
 		'cmdline_iscsi:string' \
 		'cmdline_remove:string' \
-		'menu_title:string:OpenWrt PXE TFTP Boot Menu' \
-		'menu_password:string' \
-		'pxe_path_prefix:string'
+		'menu_title:string:OpenWrt PXE Boot Menu' \
+		'menu_username:string' \
+		'menu_password:string'
 }
 
 bootentries_config() {
@@ -21,19 +21,57 @@ bootentries_config() {
 		return 1
 	}
 
-	mkdir -p /srv/tftp/pxelinux.cfg
-	cat > /srv/tftp/pxelinux.cfg/default <<EOF
-DEFAULT menu.c32
-#DEFAULT vesamenu.c32
-PROMPT 0
-MENU TITLE $menu_title
-# Set to 1 to allow editing of cmdline options
-ALLOWOPTIONS 0
+	cat > /srv/tftp/ipxe/entry.ipxe <<EOF
+#!ipxe
+  
+login
+set boot-url http://\${username:uristring}:\${password:uristring}@$(uci get network.lan.ipaddr):81/
+chain \${boot-url}bootentries/menu.ipxe
 EOF
 
 	rm -rf /srv/tftp/bootentries
 	mkdir /srv/tftp/bootentries
-	
+
+	cat > /tmp/partial.ipxe.header.tmp <<EOF
+#!ipxe
+
+:start
+menu $menu_title
+item --gap --             ------------------------- Operating systems ------------------------------
+EOF
+
+	cat > /tmp/partial.ipxe.contents.tmp <<EOF
+item --gap --             ------------------------- Advanced options -------------------------------
+item config               Configure settings
+item shell                Drop to iPXE shell
+item reboot               Reboot computer
+item
+item exit                 Exit iPXE and continue BIOS boot
+choose selected || goto shell
+goto \${selected}
+
+:shell
+echo Type 'exit' to get the back to the menu
+shell
+goto start
+
+:failed
+echo Booting failed, dropping to shell
+goto shell
+
+:reboot
+reboot
+
+:exit
+exit
+
+:config
+config
+goto start
+
+# Boot entries
+EOF
+
 	umount -f /mnt || true
 	mount -o ro "$boot_partition" /mnt || return 1
 
@@ -49,21 +87,23 @@ EOF
 			if [ -n "$TITLE" -a -n "$KERNEL_PATH" -a -n "$INITRD_PATH" ]; then
 				LABEL="$(basename "$entry")"
 				mkdir -p "/srv/tftp/bootentries/$LABEL"
-				KERNEL_IMG="bootentries/$LABEL/$(basename "$KERNEL_PATH")"
-				INITRD_IMG="bootentries/$LABEL/$(basename "$INITRD_PATH")"
+				KERNEL_FILE="$(basename "$KERNEL_PATH")"
+				INITRD_FILE="$(basename "$INITRD_PATH")"
+				KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
+				INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
 				cp "/mnt/$boot_path/$KERNEL_PATH" "/srv/tftp/$KERNEL_IMG"
 				cp "/mnt/$boot_path/$INITRD_PATH" "/srv/tftp/$INITRD_IMG"
 				chmod 644 "/srv/tftp/$KERNEL_IMG"
 				chmod 644 "/srv/tftp/$INITRD_IMG"
-				echo -e "" >> /srv/tftp/pxelinux.cfg/default
-				echo -e "label $LABEL" >> /srv/tftp/pxelinux.cfg/default
-				echo -e "\tMENU LABEL $TITLE" >> /srv/tftp/pxelinux.cfg/default
-				if [ -n "$menu_password" ]; then
-					echo -e "\tMENU PASSWD $menu_password" >> /srv/tftp/pxelinux.cfg/default
-				fi
-				echo -e "\tKERNEL $pxe_path_prefix$KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
-				echo -e "\tAPPEND initrd=$pxe_path_prefix$INITRD_IMG $OPTIONS $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
-				echo -e "\tSYSAPPEND 0x2" >> /srv/tftp/pxelinux.cfg/default
+				echo -e "item $LABEL $TITLE" >> /tmp/partial.ipxe.header.tmp
+		
+				echo -e "" >> /tmp/partial.ipxe.contents.tmp
+				echo -e ":$LABEL" >> /tmp/partial.ipxe.contents.tmp
+				echo -e "kernel \${boot-url}$KERNEL_IMG" >> /tmp/partial.ipxe.contents.tmp
+				echo -e "initrd \${boot-url}$INITRD_IMG" >> /tmp/partial.ipxe.contents.tmp
+				echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $OPTIONS $cmdline_iscsi" >> /tmp/partial.ipxe.contents.tmp
+				echo -e "boot || goto failed">> /tmp/partial.ipxe.contents.tmp
+				echo -e "goto start" >> /tmp/partial.ipxe.contents.tmp
 				entries_found="$((entries_found+1))"
 			fi
 		done
@@ -88,19 +128,21 @@ EOF
 			cp "/mnt/$boot_path/$INITRD_FILE" "/srv/tftp/$INITRD_IMG"
 			chmod 644 "/srv/tftp/$KERNEL_IMG"
 			chmod 644 "/srv/tftp/$INITRD_IMG"
-			echo -e "" >> /srv/tftp/pxelinux.cfg/default
-			echo -e "label $LABEL" >> /srv/tftp/pxelinux.cfg/default
-			echo -e "\tMENU LABEL $LABEL" >> /srv/tftp/pxelinux.cfg/default
-			if [ -n "$menu_password" ]; then
-				echo -e "\tMENU PASSWD $menu_password" >> /srv/tftp/pxelinux.cfg/default
-			fi
-			echo -e "\tKERNEL $pxe_path_prefix$KERNEL_IMG" >> /srv/tftp/pxelinux.cfg/default
-			echo -e "\tAPPEND initrd=$pxe_path_prefix$INITRD_IMG $cmdline_default $cmdline_iscsi" >> /srv/tftp/pxelinux.cfg/default
-			echo -e "\tSYSAPPEND 0x2" >> /srv/tftp/pxelinux.cfg/default
+			echo -e "item $LABEL $LABEL" >> /tmp/partial.ipxe.header.tmp
+	
+			echo -e "" >> /tmp/partial.ipxe.contents.tmp
+			echo -e ":$LABEL" >> /tmp/partial.ipxe.contents.tmp
+			echo -e "kernel \${boot-url}$KERNEL_IMG" >> /tmp/partial.ipxe.contents.tmp
+			echo -e "initrd \${boot-url}$INITRD_IMG" >> /tmp/partial.ipxe.contents.tmp
+			echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $cmdline_default $cmdline_iscsi" >> /tmp/partial.ipxe.contents.tmp
+			echo -e "boot || goto failed">> /tmp/partial.ipxe.contents.tmp
+			echo -e "goto start" >> /tmp/partial.ipxe.contents.tmp
 			entries_found="$((entries_found+1))"
 		done
 	fi
 	umount /mnt
+	cat /tmp/partial.ipxe.header.tmp /tmp/partial.ipxe.contents.tmp > /srv/tftp/bootentries/menu.ipxe
+	rm -f /tmp/partial.ipxe.*.tmp
 	if [ "$entries_found" = "0" ]; then
 		echo "Could not find any boot entries for PXE TFTP boot"
 		return 1

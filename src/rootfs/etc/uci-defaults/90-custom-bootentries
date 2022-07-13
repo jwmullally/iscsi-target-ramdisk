@@ -16,21 +16,31 @@ uci set bootentries.@bootentries[0].boot_partition="$(blkid --uuid 'b7b071ef-8c7
 uci set bootentries.@bootentries[0].boot_path="/"
 
 # If we can't determine the kernel command line, use this
-uci set bootentries.@bootentries[0].cmdline_default="ro rhgb root=/dev/disk/by-uuid/5b6621d0-15ae-4c93-b9d6-f2a197a9ef06"
+uci set bootentries.@bootentries[0].cmdline_default="\
+ro \
+rhgb \
+root=/dev/disk/by-uuid/5b6621d0-15ae-4c93-b9d6-f2a197a9ef06 \
+"
 
 # Specify the dracut-network iSCSI parameters
-uci set bootentries.@bootentries[0].cmdline_iscsi="rd.shell rd.retry=5 rd.iscsi.initiator=$(uci get tgt.1.allow_name) netroot=iscsi:$(uci get network.lan.ipaddr)::::$(uci get tgt.1.name) rd.iscsi.username=$(uci get tgt.in_user.user) rd.iscsi.password=$(uci get tgt.in_user.password)"
+uci set bootentries.@bootentries[0].cmdline_iscsi="\
+rd.shell \
+rd.retry=5 \
+rd.iscsi.initiator=$(uci get tgt.1.allow_name) \
+netroot=iscsi:$(uci get network.lan.ipaddr)::::$(uci get tgt.1.name) \
+rd.iscsi.username=$(uci get tgt.in_user.user) \
+rd.iscsi.password=$(uci get tgt.in_user.password) \
+"
+
+# iscsi:${iscsi-host}::3260:1:target-01
+# iscsi:192.168.200.1::3260:1:iqn.2018-04.org.example:target-host
 
 # Remove these from any found cmdlines
 uci set bootentries.@bootentries[0].cmdline_remove="quiet"
 
 # PXE menu settings
-uci set bootentries.@bootentries[0].menu_title="OpenWrt PXE TFTP Boot Menu"
-uci set bootentries.@bootentries[0].menu_password="pass1234"
-
-# PXE file path prefix.
-# We serve the boot files with HTTP instead of simpler TFTP due to a severe
-# performance bug in UEFI syslinux's TFTP transfer code.
-uci set bootentries.@bootentries[0].pxe_path_prefix="http://$(uci get network.lan.ipaddr):81/"
+uci set bootentries.@bootentries[0].menu_title="$(uci get system.@system[0].hostname) - PXE Boot Menu"
+uci set bootentries.@bootentries[0].menu_username='pxe'
+uci set bootentries.@bootentries[0].menu_password='pass1234'
 
 uci commit bootentries

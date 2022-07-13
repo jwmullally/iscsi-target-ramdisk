@@ -248,6 +248,8 @@ Match OpenWrt structure and conventions as much as possible.
 
 * Hide `rd.iscsi.password` credentials from `/proc/cmdline`.
 
+* Set custom user class to always fetch newest iPXE
+
 
 ## Reference
 

@@ -25,7 +25,6 @@ uci set tgt.1_1=lun
 uci set tgt.1_1.device="$(lsblk -npdo pkname $(blkid --uuid 'b7b071ef-8c7f-480c-b8d5-a02fdae46f90'))"
 uci set tgt.1_1.type='disk'
 uci set tgt.1_1.bstype='aio'
-uci commit tgt
 
 # Manually specify block device. It's recommended to instead use blkid IDs
 # to avoid inconsistent block device numbering.
@@ -33,4 +32,5 @@ uci set tgt.1_2=lun
 uci set tgt.1_2.device='/dev/vdb'
 uci set tgt.1_2.type='disk'
 uci set tgt.1_2.bstype='aio'
+
 uci commit tgt

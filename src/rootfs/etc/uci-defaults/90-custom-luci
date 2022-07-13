@@ -9,11 +9,11 @@ set luci.@command[-1].name="iSCSI Target Status"
 set luci.@command[-1].command="/etc/init.d/tgt show"
 
 add luci command
-set luci.@command[-1].name='Enable PXE Access'
+set luci.@command[-1].name='Enable PXE File Access'
 set luci.@command[-1].command='/etc/init.d/pxe_access start'
 
 add luci command
-set luci.@command[-1].name='Disable PXE Access'
+set luci.@command[-1].name='Disable PXE File Access'
 set luci.@command[-1].command='/etc/init.d/pxe_access stop'
 set luci.@command[-1].public='1'
 
