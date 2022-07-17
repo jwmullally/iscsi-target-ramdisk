@@ -4,6 +4,10 @@ set -e
 # Create tgt iSCSI targets for all specified drives.
 # Note these are your entire disks you are sharing, not individual partition devices.
 
+# For dynamic password generation every boot, use the following. However this
+# would also prevent initiator reconnection when the target reboots.
+#     option password "$(cat /dev/urandom | env LC_CTYPE=C tr -dc 023456789ABCDEF | head -c 16)"
+
 uci import tgt <<EOF
 config options 'tgt'
 	option iothreads '16'
@@ -17,7 +21,7 @@ config target '1'
 config account 'in_user'
 	list target '1'
 	option user 'iscsiuser'
-	option password "$(cat /dev/urandom | env LC_CTYPE=C tr -dc 023456789ABCDEF | head -c 16)"
+	option password 'pass1234'
 EOF
 
 # Find parent disk from partition UUID
