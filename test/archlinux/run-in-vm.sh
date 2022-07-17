@@ -12,3 +12,4 @@ dependencies/archlinux/install.sh
 ./install.sh
 
 mv /boot/initramfs-$(uname -r).img /boot/initramfs-linux.img
+grub-mkconfig -o /boot/grub/grub.cfg
