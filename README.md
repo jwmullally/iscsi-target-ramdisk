@@ -156,7 +156,7 @@ sudo ./update.sh
 
 ### Disabling NetworkManager management of BOOTIF interface
 
-It's important that the BOOTIF interface stay running as the root filesystem can't perform read or writes when its down. This can cause problems when NetworkManager takes over the interface, and various events can cause it to be restarted (e.g. even the user refreshing the interface in the UI), which can lock the system. To prevent NetworkManager from managing the interface,  is installed automatically.
+It's important that the BOOTIF interface stay running as the root filesystem can't perform read or writes when its down. This can cause problems when NetworkManager takes over the interface, and various events can cause it to be restarted (e.g. even the user refreshing the interface in the UI), which can lock the system. To prevent NetworkManager from managing the interface, [this service](src/bootif-nm-unmanaged.service) is installed automatically.
 
 
 ## Troubleshooting
