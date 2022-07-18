@@ -35,9 +35,6 @@ ifname=bootnet:\${netX/mac} \
 ip=bootnet:dhcp \
 "
 
-# iscsi:${iscsi-host}::3260:1:target-01
-# iscsi:192.168.200.1::3260:1:iqn.2018-04.org.example:target-host
-
 # Remove these from any found cmdlines
 uci set bootentries.@bootentries[0].cmdline_remove="quiet"
 
