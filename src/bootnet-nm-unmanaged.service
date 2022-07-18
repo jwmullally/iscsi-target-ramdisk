@@ -1,0 +1,14 @@
+[Unit]
+Description=Set iSCSI bootnet to unmanaged in NetworkManager
+After=NetworkManager.service network.target
+ConditionPathExists=/sys/class/net/bootnet
+
+[Service]
+Type=oneshot
+# Wait until interface has finished any new DHCP requests before continuing
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/bin/nmcli device set bootnet managed no
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

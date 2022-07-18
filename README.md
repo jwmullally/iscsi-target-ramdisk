@@ -156,14 +156,14 @@ sudo ./update.sh
 
 ### Disabling NetworkManager management of BOOTIF interface
 
-It's important that the BOOTIF interface stay running as the root filesystem can't perform read or writes when its down. This can cause problems when NetworkManager takes over the interface, and various events can cause it to be restarted (e.g. even the user refreshing the interface in the UI), which can lock the system. To prevent NetworkManager from managing the interface, [this service](src/bootif-nm-unmanaged.service) is installed automatically.
+It's important that the BOOTIF interface stay running as the root filesystem can't perform read or writes when its down. This can cause problems when NetworkManager takes over the interface, and various events can cause it to be restarted (e.g. even the user refreshing the interface in the UI), which can lock the system. To prevent NetworkManager from managing the interface, [this service](src/bootnet-nm-unmanaged.service) is installed automatically.
 
 
 ## Troubleshooting
 
 On OpenWrt:
 
-* Check `/srv/tftp/pxelinux.cfg/default` and `/srv/tftp/bootentries` contain the expected kernels.
+* Check `/srv/tftp/bootentries/menu.ipxe` and `/srv/tftp/bootentries` contain the expected kernels.
 
   * Update `/etc/config/bootentries` and rerun `/etc/init.d/bootentries restart` to try find them again.
 
@@ -171,7 +171,7 @@ On OpenWrt:
 
 * Use `tcpdump port 81` to check for incoming PXE related HTTP requests (unfortunately OpenWrt uHTTPd does not support request logging).
 
-* In `/srv/tftp/pxelinux.cfg/default`, set `ALLOWOPTIONS=1` to enable editing cmdline options.
+* In `/srv/tftp/bootentries/menu.ipxe`, set `ALLOWOPTIONS=1` to enable editing cmdline options.
 
 * Check the console or `dmesg` output for Ethernet interface corruption warnings (e.g. some `e1000e` models have flaky offloading that needs to be disabled with `ethtool`.)
 
@@ -185,7 +185,7 @@ On the initiator PXE boot menu:
 On the target host (containing the OS to remote boot):
 
 * `OpenWrt iSCSI Target` boots with its own kernel and stateless initramfs.
-* [`/etc/init.d/bootentries`](src/rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/tftp/bootentries` and creates entries in `/srv/tftp/pxelinux.cfg/default`.
+* [`/etc/init.d/bootentries`](src/rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/tftp/bootentries` and creates entries in `/srv/tftp/bootentries/menu.ipxe`.
   * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries).
   * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, entries are created for all kernels matching `/boot/vmlinuz-*` along with their matching initramfs file and the `cmdline_default` arguments.
   * The contents of `cmdline_iscsi` are appended to the cmdline, which include the `netroot:iscsi:...` paramaters.
@@ -213,7 +213,7 @@ On the initiator host (the one to run the OS on):
 * The Dracut modules are executed.
 * The dracut-network iSCSI module sees the `netroot:iscsi:...` arguments and uses them to start an Open iSCSI initiator connection to the `OpenWrt iSCSI Target` host. If successful, the iSCSI target LUN devices now appear as local block devices.
 * Booting continues as normal, mounting the root filesystem using the UUID and other regularly supplied cmdline arguments.
-* (NetworkManager) The BOOTIF interface is set to unmanaged with [this service](src/bootif-nm-unmanaged.service) to prevent automatic reconfiguration
+* (NetworkManager) The BOOTIF interface is set to unmanaged with [this service](src/bootnet-nm-unmanaged.service) to prevent automatic reconfiguration
 * The target OS is now fully loaded on the initiator host.
 
 

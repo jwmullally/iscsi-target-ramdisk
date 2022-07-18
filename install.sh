@@ -53,9 +53,9 @@ set_bootif_unmanaged() {
     if [ "$HAS_NM" = "1" -a "$HAS_SYSTEMD" = "1" ]; then
         echo "Installing script to set iSCSI BOOTIF as unmanaged in NetworkManager"
         # Post install
-        install -m 0644 -T src/bootif-nm-unmanaged.service /etc/systemd/system/bootif-nm-unmanaged.service
+        install -m 0644 -T src/bootnet-nm-unmanaged.service /etc/systemd/system/bootnet-nm-unmanaged.service
         systemctl daemon-reload
-        systemctl enable bootif-nm-unmanaged
+        systemctl enable bootnet-nm-unmanaged
     fi
 }
 
