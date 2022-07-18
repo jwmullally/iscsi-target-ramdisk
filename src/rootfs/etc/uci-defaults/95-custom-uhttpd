@@ -3,10 +3,15 @@ set -e
 
 # Add an extra HTTP server for the PXE files
 
+cat > /etc/httpd.srv_tftp.conf <<EOF
+/bootentries/:$(uci get bootentries.@bootentries[0].menu_username):$(uci get bootentries.@bootentries[0].menu_password)
+EOF
+
 uci -q batch << EOF
 set uhttpd.srv_tftp='uhttpd'
 set uhttpd.srv_tftp.home='/srv/tftp/'
 set uhttpd.srv_tftp.listen_http="$(uci get network.lan.ipaddr):81"
+set uhttpd.srv_tftp.config='/etc/httpd.srv_tftp.conf'
 
 commit uhttd
 EOF

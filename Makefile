@@ -1,5 +1,6 @@
 ALL_CURL_OPTS := $(CURL_OPTS) -L --fail --create-dirs
 
+#VERSION := 22.03-SNAPSHOT
 VERSION := 22.03.0-rc5
 BOARD := x86
 SUBTARGET := 64
@@ -11,7 +12,6 @@ PACKAGES := luci tgt blkid lsblk iperf3 luci-app-commands atop tcpdump ethtool
 
 BUILD_DIR := build
 OUTPUT_DIR := $(BUILD_DIR)/$(BUILDER)/bin/targets/$(BOARD)/$(SUBTARGET)
-OUTPUT_PREFIX := openwrt-$(VERSION)-$(EXTRA_IMAGE_NAME)-$(BOARD)-$(SUBTARGET)-$(PROFILE)
 
 
 all: images
@@ -55,9 +55,9 @@ images: $(BUILD_DIR)/$(BUILDER) rootfs-contents
 	cd $(BUILD_DIR)/$(BUILDER) && make image PROFILE="$(PROFILE)" EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" PACKAGES="$(PACKAGES)" FILES="../rootfs"
 	cat $(OUTPUT_DIR)/sha256sums
 	mkdir -p $(BUILD_DIR)/images
-	cp $(OUTPUT_DIR)/$(OUTPUT_PREFIX)-kernel.bin $(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME)-kernel.bin
+	cp $(OUTPUT_DIR)/openwrt-*-kernel.bin $(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME)-kernel.bin
 	# TODO: Build initramfs image with OpenWrt ImageBuilder built-in Makefile targets
-	src/tar2cpio.sh $(OUTPUT_DIR)/$(OUTPUT_PREFIX)-rootfs.tar.gz $(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME)-initrd.img
+	src/tar2cpio.sh $(OUTPUT_DIR)/openwrt-*-rootfs.tar.gz $(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME)-initrd.img
 	ls -hs $(BUILD_DIR)/images
 
 

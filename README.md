@@ -73,7 +73,7 @@ You'll mainly just want to update:
 
     * Find your default Kernel command line from `/etc/default/grub` or `/proc/cmdline`. Note, this is ignored when it can be read fully from the `/boot/loader/entries` files.
 
-* [`src/rootfs/etc/uci-defaults/90-custom-tgt`](src/rootfs/etc/uci-defaults/90-custom-tgt)
+* [`src/rootfs/etc/uci-defaults/85-custom-tgt`](src/rootfs/etc/uci-defaults/85-custom-tgt)
 
   * Update the list of of block devices to share as iSCSI LUNs.
 
@@ -189,21 +189,26 @@ On the target host (containing the OS to remote boot):
   * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries).
   * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, entries are created for all kernels matching `/boot/vmlinuz-*` along with their matching initramfs file and the `cmdline_default` arguments.
   * The contents of `cmdline_iscsi` are appended to the cmdline, which include the `netroot:iscsi:...` paramaters.
-  * An optional password is set for the PXE menu. (Note: this just provides user-facing securiry in the PXELINUX menu to prevent accidental booting; boot files and iSCSI credentials can still be sniffed over the network).
+  * An optional password is set for the PXE menu. (Note: this just provides user-facing securiry in the iPXE menu to prevent accidental booting; boot files and iSCSI credentials can still be sniffed over the network).
 * `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets.
-  * Configuration: [`/etc/uci-defaults/90-custom-tgt`](src/rootfs/etc/uci-defaults/90-custom-tgt).
+  * Configuration: [`/etc/uci-defaults/85-custom-tgt`](src/rootfs/etc/uci-defaults/85-custom-tgt).
 * `/etc/init.d/dnsmasq` starts which provides DHCP, DHCP boot and serves `/srv/tftp` via TFTP. The DHCP allocation pool is limited to one available address to prevent accidental concurrent booting from separate machines and provide some subnet isolation. The DHCP lease time is set to infinite.
   * Configuration: [`/etc/uci-defaults/90-custom-dhcp`](src/rootfs/etc/uci-defaults/90-custom-dhcp).
-* [`/etc/init.d/tftp_access`](src/rootfs/etc/init.d/tftp_access) starts and adds uHTTPd server configuration for `/srv/tftp`.
+* `/etc/init.d/uhttpd` starts and serves `/srv/tftp` via HTTP access.
+  * Configuration: [`/etc/uci-defaults/95-custom-uhttpd`](src/rootfs/etc/uci-defaults/95-custom-uhttpd).
+  * HTTP BASIC authentication is used to protect `/srv/tftp/bootentries` containing the boot images and configuration.
+  * The [`/etc/init.d/pxe_access`](src/rootfs/etc/init.d/pxe_access) service can be used to enable/disable access to these files.
 
 On the initiator host (the one to run the OS on):
 
 * The BIOS starts PXE boot.
-* The PXE ROM requests and receives a DHCP boot response, pointing to the PXELINUX binary on TFTP.
-* PXELINUX is downloaded and executed, which fetches `/srv/tftp/pxelinux.cfg/default` over TFTP and displays the boot options to the user.
+* The PXE ROM requests and receives a DHCP boot response, pointing to the iPXE binary on TFTP.
+* iPXE is downloaded and executed, which issues another DHCP request and fetches `/srv/tftp/ipxe/entry.ipxe` over TFTP.
+* The user enters a username / password which are used as the authorization for the PXE HTTP requests.
+* iPXE chainloads `/srv/tftp/bootentries/menu.ipxe` over HTTP.
 * The user selects a kernel to boot.
-* PXELINUX fetches the kernel and associated initramfs over HTTP.
-* PXELINUX launches the kernel using the included cmdline arguments, which contain the extra `netroot:iscsi:...` parameters.
+* iPXE fetches the kernel and associated initramfs over HTTP.
+* iPXE launches the kernel using the included cmdline arguments, which contain the extra `netroot:iscsi:...` parameters.
 * The kernel starts, unpacks and launches the init process in the initramfs.
 * The Dracut modules are executed.
 * The dracut-network iSCSI module sees the `netroot:iscsi:...` arguments and uses them to start an Open iSCSI initiator connection to the `OpenWrt iSCSI Target` host. If successful, the iSCSI target LUN devices now appear as local block devices.
@@ -238,20 +243,20 @@ Match OpenWrt structure and conventions as much as possible.
 
 * [MACSEC L2 encryption](https://developers.redhat.com/blog/2016/10/14/macsec-a-different-solution-to-encrypt-network-traffic/) or iSCSI + TLS.
 
-* Password encrypted PXELINUX configuration and TFTP files.
-
 * SecureBoot. ([Unlikely?](https://forum.openwrt.org/t/x86-uefi-secure-boot-installation/115666)). Provide instructions for self-signed images with `mokutil`?
 
 * Sort "OpenWrt iSCSI Target" entry under OS entries in bootloader menu.
 
 * Change iSCSI from userspace TGT to in-kernel LIO ([rough comparison](doc/rough_comparison_lio_vs_tgtd.png)).
 
-* Hide `rd.iscsi.password` credentials from `/proc/cmdline`.
+* Hide `rd.iscsi.password` credentials from `/proc/cmdline` (e.g. using iBFT).
 
 * Set custom user class to always fetch newest iPXE
 
 
 ## Reference
+
+[iPXE - Documentation](https://ipxe.org/docs).
 
 [bootup - System bootup process](https://www.freedesktop.org/software/systemd/man/bootup.html).
 
