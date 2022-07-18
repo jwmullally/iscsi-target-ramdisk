@@ -171,8 +171,6 @@ On OpenWrt:
 
 * Use `tcpdump port 81` to check for incoming PXE related HTTP requests (unfortunately OpenWrt uHTTPd does not support request logging).
 
-* In `/srv/tftp/bootentries/menu.ipxe`, set `ALLOWOPTIONS=1` to enable editing cmdline options.
-
 * Check the console or `dmesg` output for Ethernet interface corruption warnings (e.g. some `e1000e` models have flaky offloading that needs to be disabled with `ethtool`.)
 
 On the initiator PXE boot menu:
