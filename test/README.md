@@ -11,7 +11,7 @@ Each VM has 2 network interfaces, one connected to the regular NAT'd libvirt net
 ### Example workflow
 
 * `cd common`
-  * `./create-isolatred-network.sh`
+  * `./create-isolated-network.sh`
   * `./mk-vm-test-initiator.sh`
 
 * `cd fedora`
