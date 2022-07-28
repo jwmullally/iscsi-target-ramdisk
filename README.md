@@ -204,6 +204,7 @@ On the initiator host (the one to run the OS on):
 * iPXE is downloaded and executed, which issues another DHCP request and fetches `/srv/tftp/ipxe/entry.ipxe` over TFTP.
 * The user enters a username / password which are used as the authorization for the PXE HTTP requests.
 * iPXE chainloads `/srv/tftp/bootentries/menu.ipxe` over HTTP.
+* (Optional, default) The iSCSI target connection details are stored in the iBFT ACPI table.
 * The user selects a kernel to boot.
 * iPXE fetches the kernel and associated initramfs over HTTP.
 * iPXE launches the kernel using the included cmdline arguments, which contain the extra `netroot:iscsi:...` parameters.
@@ -219,7 +220,7 @@ On the initiator host (the one to run the OS on):
 
 Typical Linux distributions use a simple boot loader (e.g. GRUB) to load the Linux Kernel and an [Initial ramdisk](https://en.wikipedia.org/wiki/Initial_ramdisk) mini root file system. The purpose of this root filesystem is to do everything necessary to prepare the storage block devices and mount the real root filesystem. This provides the OS with great flexibility about how the root filesystem is stored, for example on different types of network storage, logical volumes, RAID arrays, encrypted filesystems etc. All the configuration and complexity is handled by software in the Initial Ramdisk; all the kernel needs is a final mounted directory it can chroot, and continue the init boot sequence.
 
-Here we add the existing Dracut iSCSI initiator module to the OS's initramfs, which is designed for booting systems installed to remote iSCSI block devices. It stays deactivated and out of the way unless the "netroot:iscsi:..." kernel cmdline arguments are supplied. When activated, the disk's block devices show up on the system just as if they were locally attached. Modern Linux distributions use UUID-based partition identification in `/etc/fstab`, which makes mounting work deterministically regardless of the names of the underlying block devices (e.g. /dev/sda, /dev/sdb ordering can change based on the order drives or USB keys are inserted). In practice, this means you can do upgrades, kernel updates, bootloader changes, etc. as if you were doing them on the original computer. On modern systems, you should get full 1GB/s transfer speed and relatively low IOP latency. As modern Linux distributions are mostly plug and play, there should be little issue with your OS seeing a completely different set of hardware.
+Here we add the existing Dracut iSCSI initiator module to the OS's initramfs, which is designed for booting systems installed to remote iSCSI block devices. It stays deactivated and out of the way unless the `netroot:iscsi:...` kernel cmdline arguments are supplied. When activated, the disk's block devices show up on the system just as if they were locally attached. Modern Linux distributions use UUID-based partition identification in `/etc/fstab`, which makes mounting work deterministically regardless of the names of the underlying block devices (e.g. /dev/sda, /dev/sdb ordering can change based on the order drives or USB keys are inserted). In practice, this means you can do upgrades, kernel updates, bootloader changes, etc. as if you were doing them on the original computer. On modern systems, you should get full 1GB/s transfer speed and relatively low IOP latency. As modern Linux distributions are mostly plug and play, there should be little issue with your OS seeing a completely different set of hardware.
 
 To share the OS drives, we can't use the original OS itself, as only one system can be reading/writing the devices at a time (otherwise disk corruption would result), so instead we use a stateless ramdisk image built using the OpenWrt ImageBuilder. OpenWrt is a very flexible embedded system platform, specializing in network routing with a large number of packages available. This image has been configured to automatically share the drives with iSCSI and the kernel+initramfs files with PXE after booting. The separate OpenWrt system also means you don't have to reconfigure your OS to do all this sharing, and you can easily customize it further by adding more files and packages.
 
@@ -246,8 +247,6 @@ Match OpenWrt structure and conventions as much as possible.
 * Sort "OpenWrt iSCSI Target" entry under OS entries in bootloader menu.
 
 * Change iSCSI from userspace TGT to in-kernel LIO ([rough comparison](doc/rough_comparison_lio_vs_tgtd.png)).
-
-* Hide `rd.iscsi.password` credentials from `/proc/cmdline` (e.g. using iBFT).
 
 * Set custom user class to always fetch newest iPXE
 

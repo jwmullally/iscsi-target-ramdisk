@@ -7,6 +7,7 @@ validate_bootentries_section() {
 	uci_load_validate bootentries bootentries "$1" "$2" \
 		'boot_partition:string' \
 		'boot_path:string:/' \
+		'ibft:bool:0' \
 		'cmdline_default:string' \
 		'cmdline_iscsi:string' \
 		'cmdline_remove:string' \
@@ -34,6 +35,10 @@ EOF
 
 	cat > /tmp/partial.ipxe.header.tmp <<EOF
 #!ipxe
+
+EOF
+
+	cat > /tmp/partial.ipxe.menu.tmp <<EOF
 
 :start
 menu $menu_title
@@ -95,7 +100,7 @@ EOF
 				cp "/mnt/$boot_path/$INITRD_PATH" "/srv/tftp/$INITRD_IMG"
 				chmod 644 "/srv/tftp/$KERNEL_IMG"
 				chmod 644 "/srv/tftp/$INITRD_IMG"
-				echo -e "item $LABEL $TITLE" >> /tmp/partial.ipxe.header.tmp
+				echo -e "item $LABEL $TITLE" >> /tmp/partial.ipxe.menu.tmp
 		
 				echo -e "" >> /tmp/partial.ipxe.contents.tmp
 				echo -e ":$LABEL" >> /tmp/partial.ipxe.contents.tmp
@@ -128,7 +133,7 @@ EOF
 			cp "/mnt/$boot_path/$INITRD_FILE" "/srv/tftp/$INITRD_IMG"
 			chmod 644 "/srv/tftp/$KERNEL_IMG"
 			chmod 644 "/srv/tftp/$INITRD_IMG"
-			echo -e "item $LABEL $LABEL" >> /tmp/partial.ipxe.header.tmp
+			echo -e "item $LABEL $LABEL" >> /tmp/partial.ipxe.menu.tmp
 	
 			echo -e "" >> /tmp/partial.ipxe.contents.tmp
 			echo -e ":$LABEL" >> /tmp/partial.ipxe.contents.tmp
@@ -141,7 +146,34 @@ EOF
 		done
 	fi
 	umount /mnt
-	cat /tmp/partial.ipxe.header.tmp /tmp/partial.ipxe.contents.tmp > /srv/tftp/bootentries/menu.ipxe
+
+	if [ "$ibft" = "1" ]; then
+		echo -e "set initiator-iqn $(uci get tgt.1.allow_name)" >> /tmp/partial.ipxe.header.tmp
+		echo -e "set username $(uci get tgt.in_user.user)" >> /tmp/partial.ipxe.header.tmp
+		echo -e "set password $(uci get tgt.in_user.password)" >> /tmp/partial.ipxe.header.tmp
+
+		lun_idx=0
+		drive_idx=128    # 0x80
+		while uci get tgt.@lun[$lun_idx] &> /dev/null ; do
+			lun_idx=$((lun_idx+1));
+			target_uri="iscsi:$(uci get network.lan.ipaddr):::$lun_idx:$(uci get tgt.1.name)"
+			drive="$(printf "%x" "$drive_idx")"
+			drive_idx=$((drive_idx+1));
+			echo "sanhook --drive 0x$drive $target_uri" >> /tmp/partial.ipxe.header.tmp
+		done
+
+		echo -e "item sanboot iBFT SAN boot" >> /tmp/partial.ipxe.menu.tmp
+		echo -e "" >> /tmp/partial.ipxe.contents.tmp
+		echo -e ":sanboot" >> /tmp/partial.ipxe.contents.tmp
+		echo -e "sanboot || goto failed" >> /tmp/partial.ipxe.contents.tmp
+		echo -e "goto start" >> /tmp/partial.ipxe.contents.tmp
+	fi
+
+	cat \
+		/tmp/partial.ipxe.header.tmp \
+		/tmp/partial.ipxe.menu.tmp \
+		/tmp/partial.ipxe.contents.tmp \
+		> /srv/tftp/bootentries/menu.ipxe
 	rm -f /tmp/partial.ipxe.*.tmp
 	if [ "$entries_found" = "0" ]; then
 		echo "Could not find any boot entries for PXE TFTP boot"

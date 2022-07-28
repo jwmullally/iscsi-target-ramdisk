@@ -22,20 +22,43 @@ rhgb \
 root=/dev/disk/by-uuid/5b6621d0-15ae-4c93-b9d6-f2a197a9ef06 \
 "
 
+## Use iSCSI Boot Firmware Table (iBFT) to pass the iSCSI connection
+## details to dracut initrd through an iBFT ACPI table.
+
+uci set bootentries.@bootentries[0].ibft="1"
+
 # Specify the dracut-network iSCSI parameters
 uci set bootentries.@bootentries[0].cmdline_iscsi="\
 rd.shell \
 rd.retry=5 \
-rd.iscsi.initiator=$(uci get tgt.1.allow_name) \
-netroot=iscsi:$(uci get network.lan.ipaddr)::::$(uci get tgt.1.name) \
-rd.iscsi.username=$(uci get tgt.in_user.user) \
-rd.iscsi.password=$(uci get tgt.in_user.password) \
+rd.iscsi.firmware=1 \
+netroot=iscsi:ibft \
 rd.iscsi.param=node.session.timeo.replacement_timeout=3600 \
 ifname=bootnet:\${netX/mac} \
 ip=bootnet:dhcp \
 "
 
-# Remove these from any found cmdlines
+# # Don't use iBFT. Specify iSCSI connection details directly using the kernel
+# # cmdline. Some BIOSs don't properly support an ACPI iBFT table, so you can
+# # resort to this in those situations. Note this will leak the target password
+# # to all users through /proc/cmdline.
+# 
+# uci set bootentries.@bootentries[0].ibft="0"
+# 
+# # Specify the dracut-network iSCSI parameters
+# uci set bootentries.@bootentries[0].cmdline_iscsi="\
+# rd.shell \
+# rd.retry=5 \
+# rd.iscsi.initiator=$(uci get tgt.1.allow_name) \
+# netroot=iscsi:$(uci get network.lan.ipaddr)::::$(uci get tgt.1.name) \
+# rd.iscsi.username=$(uci get tgt.in_user.user) \
+# rd.iscsi.password=$(uci get tgt.in_user.password) \
+# rd.iscsi.param=node.session.timeo.replacement_timeout=3600 \
+# ifname=bootnet:\${netX/mac} \
+# ip=bootnet:dhcp \
+# "
+
+# Remove these from any found cmdlines (TODO)
 uci set bootentries.@bootentries[0].cmdline_remove="quiet"
 
 # PXE menu settings

@@ -8,7 +8,8 @@ BUILDER := openwrt-imagebuilder-$(VERSION)-$(BOARD)-$(SUBTARGET).Linux-x86_64
 PROFILE := generic
 EXTRA_IMAGE_NAME := iscsi-target
 # Example WiFi support: "wpad-wolfssl kmod-iwlwifi iwlwifi-firmware-iwl8265"
-PACKAGES := luci tgt blkid lsblk iperf3 luci-app-commands atop tcpdump ethtool
+# Example Emulated device support: "kmod-veth wpad-openssl kmod-mac80211-hwsim"
+PACKAGES := luci tgt blkid lsblk iperf3 luci-app-commands atop tcpdump ethtool -libustream-wolfssl libustream-openssl
 
 BUILD_DIR := build
 OUTPUT_DIR := $(BUILD_DIR)/$(BUILDER)/bin/targets/$(BOARD)/$(SUBTARGET)
