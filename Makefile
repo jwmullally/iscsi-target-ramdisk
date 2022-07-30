@@ -19,17 +19,16 @@ all: images
 
 
 $(BUILD_DIR)/downloads:
-	mkdir -p $(BUILD_DIR)/downloads.tmp
 	# OpenWrt Image Builder
-	cd $(BUILD_DIR)/downloads.tmp && curl $(ALL_CURL_OPTS) -O https://downloads.openwrt.org/releases/$(VERSION)/targets/$(BOARD)/$(SUBTARGET)/$(BUILDER).tar.xz
+	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp -O https://downloads.openwrt.org/releases/$(VERSION)/targets/$(BOARD)/$(SUBTARGET)/$(BUILDER).tar.xz
 	# iPXE
-	mkdir -p $(BUILD_DIR)/downloads.tmp/ipxe/x86
-	cd $(BUILD_DIR)/downloads.tmp/ipxe/x86 && curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/ipxe.pxe
-	cd $(BUILD_DIR)/downloads.tmp/ipxe/x86 && curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/undionly.kpxe
-	mkdir -p $(BUILD_DIR)/downloads.tmp/ipxe/x86_64
-	cd $(BUILD_DIR)/downloads.tmp/ipxe/x86_64 && curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/ipxe.efi
+	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86 -O https://boot.ipxe.org/ipxe.pxe
+	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86 -O https://boot.ipxe.org/undionly.kpxe
+	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86_64 -O https://boot.ipxe.org/ipxe.efi
+	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/ -O https://boot.ipxe.org/ipxe.iso
 	# ISOLINUX for ISO building
-	cd $(BUILD_DIR)/downloads.tmp && curl $(ALL_CURL_OPTS) -O https://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-6.03.tar.gz && tar -xf syslinux-6.03.tar.gz
+	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp -O https://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-6.03.tar.gz
+	cd $(BUILD_DIR)/downloads.tmp && tar -xf syslinux-6.03.tar.gz
 	mv $(BUILD_DIR)/downloads.tmp $(BUILD_DIR)/downloads
 
 
@@ -38,14 +37,10 @@ rootfs-contents: $(BUILD_DIR)/downloads
 	cp -rv src/rootfs $(BUILD_DIR)/rootfs
 	cp -f $(BUILD_DIR)/$(BUILDER)/target/linux/generic/other-files/init $(BUILD_DIR)/rootfs/
 	mkdir -p $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86
-	cd $(BUILD_DIR)/downloads/ipxe/x86 && cp -f \
-		ipxe.pxe \
-		undionly.kpxe \
-		../../../rootfs/srv/tftp/ipxe/x86
+	cp -f $(BUILD_DIR)/downloads/ipxe/x86/ipxe.pxe $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86
+	cp -f $(BUILD_DIR)/downloads/ipxe/x86/undionly.kpxe $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86
 	mkdir -p $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86_64
-	cd $(BUILD_DIR)/downloads/ipxe/x86_64 && cp -f \
-		ipxe.efi \
-		../../../rootfs/srv/tftp/ipxe/x86_64
+	cp -f $(BUILD_DIR)/downloads/ipxe/x86_64/ipxe.efi $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86_64
 
 
 $(BUILD_DIR)/$(BUILDER): $(BUILD_DIR)/downloads

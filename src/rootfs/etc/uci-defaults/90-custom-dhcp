@@ -35,8 +35,8 @@ set dhcp.@userclass[-1].networkid='ipxe'
 set dhcp.@userclass[-1].userclass='iPXE'
 
 add dhcp boot
-#set dhcp.@boot[-1].filename='tag:pcbios,tag:!ipxe,ipxe/x86/ipxe.pxe'
-set dhcp.@boot[-1].filename='tag:pcbios,tag:!ipxe,ipxe/x86/undionly.kpxe'
+set dhcp.@boot[-1].filename='tag:pcbios,tag:!ipxe,ipxe/x86/ipxe.pxe'
+#set dhcp.@boot[-1].filename='tag:pcbios,tag:!ipxe,ipxe/x86/undionly.kpxe'
 set dhcp.@boot[-1].serveraddress=$(uci get network.lan.ipaddr)
 set dhcp.@boot[-1].servername=$(uci get system.@system[0].hostname)
 
