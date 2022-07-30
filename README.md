@@ -130,7 +130,7 @@ sudo dependencies/archlinux/install.sh
 sudo ./install.sh
 ```
 
-NOTE: This replaces `mkinitcpio` with [`Dracut`](https://wiki.archlinux.org/title/Dracut). (See [here](https://wiki.archlinux.org/title/ISCSI/Boot) for instructions on using `mkinitcpio`).
+NOTE: This replaces [mkinitcpio](https://wiki.archlinux.org/title/mkinitcpio) with [Dracut](https://wiki.archlinux.org/title/Dracut). (See [here](https://wiki.archlinux.org/title/ISCSI/Boot) for instructions on using `mkinitcpio`).
 
 After the install, you will need to move the Dracut generated initramfs into place. This can be done automatically for future kernel installs with [`dracut-hook`](https://aur.archlinux.org/packages/dracut-hook).
 
