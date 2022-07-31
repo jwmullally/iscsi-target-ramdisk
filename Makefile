@@ -25,7 +25,9 @@ $(BUILD_DIR)/downloads:
 	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86 -O https://boot.ipxe.org/ipxe.pxe
 	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86 -O https://boot.ipxe.org/undionly.kpxe
 	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86_64 -O https://boot.ipxe.org/ipxe.efi
+	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86_64 -O https://boot.ipxe.org/snponly.efi
 	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/ -O https://boot.ipxe.org/ipxe.iso
+	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/ -O https://boot.ipxe.org/ipxe.usb
 	# ISOLINUX for ISO building
 	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp -O https://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-6.03.tar.gz
 	cd $(BUILD_DIR)/downloads.tmp && tar -xf syslinux-6.03.tar.gz
@@ -41,6 +43,7 @@ rootfs-contents: $(BUILD_DIR)/downloads
 	cp -f $(BUILD_DIR)/downloads/ipxe/x86/undionly.kpxe $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86
 	mkdir -p $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86_64
 	cp -f $(BUILD_DIR)/downloads/ipxe/x86_64/ipxe.efi $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86_64
+	cp -f $(BUILD_DIR)/downloads/ipxe/x86_64/snponly.efi $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86_64
 
 
 $(BUILD_DIR)/$(BUILDER): $(BUILD_DIR)/downloads

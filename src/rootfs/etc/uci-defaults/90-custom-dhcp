@@ -47,6 +47,7 @@ set dhcp.@boot[-1].servername=$(uci get system.@system[0].hostname)
 
 add dhcp boot
 set dhcp.@boot[-1].filename='tag:efi_x86_64,tag:!ipxe,ipxe/x86_64/ipxe.efi'
+#set dhcp.@boot[-1].filename='tag:efi_x86_64,tag:!ipxe,ipxe/x86_64/snponly.efi'
 set dhcp.@boot[-1].serveraddress=$(uci get network.lan.ipaddr)
 set dhcp.@boot[-1].servername=$(uci get system.@system[0].hostname)
 

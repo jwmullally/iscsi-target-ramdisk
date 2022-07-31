@@ -177,6 +177,10 @@ On the initiator PXE boot menu:
 
 * Remove `quiet` from the kernel cmdline to see more debug output during boot.
 
+On the target:
+
+* Use `iscsiadm -m session -P 1 --print=3` to view the iSCSI connection status and parameters
+
 
 ## How it works
 
@@ -187,7 +191,6 @@ On the target host (containing the OS to remote boot):
   * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries).
   * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, entries are created for all kernels matching `/boot/vmlinuz-*` along with their matching initramfs file and the `cmdline_default` arguments.
   * The contents of `cmdline_iscsi` are appended to the cmdline, which include the `netroot:iscsi:...` paramaters.
-  * An optional password is set for the PXE menu. (Note: this just provides user-facing securiry in the iPXE menu to prevent accidental booting; boot files and iSCSI credentials can still be sniffed over the network).
 * `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets.
   * Configuration: [`/etc/uci-defaults/85-custom-tgt`](src/rootfs/etc/uci-defaults/85-custom-tgt).
 * `/etc/init.d/dnsmasq` starts which provides DHCP, DHCP boot and serves `/srv/tftp` via TFTP. The DHCP allocation pool is limited to one available address to prevent accidental concurrent booting from separate machines and provide some subnet isolation. The DHCP lease time is set to infinite.
@@ -203,6 +206,7 @@ On the initiator host (the one to run the OS on):
 * The PXE ROM requests and receives a DHCP boot response, pointing to the iPXE binary on TFTP.
 * iPXE is downloaded and executed, which issues another DHCP request and fetches `/srv/tftp/ipxe/entry.ipxe` over TFTP.
 * The user enters a username / password which are used as the authorization for the PXE HTTP requests.
+  * Caution: Boot files and iSCSI credentials can still be sniffed as they are transferred over the network. Only use on a physically secure network or direct connection.
 * iPXE chainloads `/srv/tftp/bootentries/menu.ipxe` over HTTP.
 * (Optional, default) The iSCSI target connection details are stored in the iBFT ACPI table.
 * The user selects a kernel to boot.

@@ -31,9 +31,9 @@ uci set bootentries.@bootentries[0].ibft="1"
 uci set bootentries.@bootentries[0].cmdline_iscsi="\
 rd.shell \
 rd.retry=5 \
+netroot=iscsi \
 rd.iscsi.firmware=1 \
-netroot=iscsi:ibft \
-rd.iscsi.param=node.session.timeo.replacement_timeout=3600 \
+rd.iscsi.param=node.session.timeo.replacement_timeout=-1 \
 ifname=bootnet:\${netX/mac} \
 ip=bootnet:dhcp \
 "
@@ -53,7 +53,7 @@ ip=bootnet:dhcp \
 # netroot=iscsi:$(uci get network.lan.ipaddr)::::$(uci get tgt.1.name) \
 # rd.iscsi.username=$(uci get tgt.in_user.user) \
 # rd.iscsi.password=$(uci get tgt.in_user.password) \
-# rd.iscsi.param=node.session.timeo.replacement_timeout=3600 \
+# rd.iscsi.param=node.session.timeo.replacement_timeout=-1 \
 # ifname=bootnet:\${netX/mac} \
 # ip=bootnet:dhcp \
 # "
