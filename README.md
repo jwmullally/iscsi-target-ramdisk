@@ -42,11 +42,11 @@ If you want to share network/WiFi connections from the target to the initiator:
 
 Try this out first with the VM images in [`test`](test) to see how it works.
 
-*!! Beta software - may prevent your computer from booting. Be comfortable with editing files in /boot, and have a backup bootdisk/CD/USB in case anything goes wrong*
+*!! This solution makes slight changes to your `/boot` files. Before continuing, ensure you have a backup bootdisk/CD/USB in case anything goes wrong.*
 
 *!! Currently there is NO ENCRYPTION for the iSCSI endpoint. See TODO below. For now, only run this on a trusted network with trusted hosts.*
 
-While remote booting, treat disconnecting the network cable like unplugging your harddrive while your computer is running. Some distributions seem better at recovering from disconnects than others (you can experiment with this in the test VMs by the disabling/enabling ethernet links). Changing the settings of the network interface carrying the iSCSI traffic can also bring the interface down (where we can we set it to unmanaged with static IP allocations).
+While remote booting, treat disconnecting the network cable like unplugging your harddrive while your computer is running. The `iscsid` initiator with the default settings should be able to recover from disconnects and reboots of the target (you can experiment with this in the test VMs by the disabling/enabling ethernet links). Changing the settings of the network interface carrying the iSCSI traffic can also bring the interface down, so where we can we set it to unmanaged with static IP allocations.
 
 
 ## Installation
@@ -154,6 +154,13 @@ make images
 sudo ./update.sh
 ```
 
+### Uninstalling
+
+```
+sudo /usr/local/sbin/uninstall-openwrt-iscsi-target.sh
+```
+
+
 ### Disabling NetworkManager management of BOOTIF interface
 
 It's important that the BOOTIF interface stay running as the root filesystem can't perform read or writes when its down. This can cause problems when NetworkManager takes over the interface, and various events can cause it to be restarted (e.g. even the user refreshing the interface in the UI), which can lock the system. To prevent NetworkManager from managing the interface, [this service](src/bootnet-nm-unmanaged.service) is installed automatically.
@@ -161,7 +168,7 @@ It's important that the BOOTIF interface stay running as the root filesystem can
 
 ## Troubleshooting
 
-On OpenWrt:
+On the OpenWrt target:
 
 * Check `/srv/tftp/bootentries/menu.ipxe` and `/srv/tftp/bootentries` contain the expected kernels.
 
@@ -177,9 +184,11 @@ On the initiator PXE boot menu:
 
 * Remove `quiet` from the kernel cmdline to see more debug output during boot.
 
-On the target:
+On the initiator:
 
 * Use `iscsiadm -m session -P 1 --print=3` to view the iSCSI connection status and parameters
+
+  * For live updates during testing: `watch -n 0.2 iscsiadm -m session -P 1 --print=3`
 
 
 ## How it works
@@ -240,9 +249,7 @@ Match OpenWrt structure and conventions as much as possible.
 
 ## TODO
 
-* Uninstall script.
-
-* Debian: Disable default open-iscsi service by default during normal use to prevent error.
+* Debian: Tips for disabling default open-iscsi service by default during normal use to prevent error.
 
 * [MACSEC L2 encryption](https://developers.redhat.com/blog/2016/10/14/macsec-a-different-solution-to-encrypt-network-traffic/) or iSCSI + TLS.
 

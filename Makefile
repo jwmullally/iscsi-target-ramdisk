@@ -9,7 +9,7 @@ PROFILE := generic
 EXTRA_IMAGE_NAME := iscsi-target
 # Example WiFi support: "wpad-wolfssl kmod-iwlwifi iwlwifi-firmware-iwl8265"
 # Example Emulated device support: "kmod-veth wpad-openssl kmod-mac80211-hwsim"
-PACKAGES := luci tgt blkid lsblk iperf3 luci-app-commands atop tcpdump ethtool -libustream-wolfssl libustream-openssl
+PACKAGES := luci tgt blkid lsblk iperf3 luci-app-commands atop tcpdump ethtool -libustream-wolfssl libustream-openssl luci-ssl-openssl
 
 BUILD_DIR := build
 OUTPUT_DIR := $(BUILD_DIR)/$(BUILDER)/bin/targets/$(BOARD)/$(SUBTARGET)

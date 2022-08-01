@@ -63,4 +63,5 @@ enable_dracut_iscsi
 install_boot_entry
 preserve_kernel_cmdline
 set_bootif_unmanaged
+install -m 0755 -T uninstall.sh /usr/local/sbin/uninstall-openwrt-iscsi-target.sh
 ./update.sh
