@@ -14,7 +14,11 @@ disable_dracut_iscsi() {
     if [ "$HAS_OSTREE" = "1" ]; then
         (rpm-ostree initramfs | grep -q "Initramfs regeneration: disabled") || rpm-ostree initramfs --disable
     else
-        dracut --force
+        # We have just removed the dracut config containing the hostonly options.
+        # If this uninstall script is being run on the initiator, hostonly mode 
+        # may result in initramfs that dont run on the original target, so to be
+        # safe we use no-hostonly mode once to ensure working initramfs.
+        dracut --force --no-hostonly --no-hostonly-cmdline
     fi
 }
 
@@ -34,7 +38,7 @@ remove_boot_entry() {
 
 preserve_kernel_cmdline() {
     if [ -f /etc/kernel/cmdline ]; then
-        echo "Custom /etc/kernel/cmdline detected, review manually and remove if desired."
+        echo "Custom /etc/kernel/cmdline detected, review manually and remove to go back to default cmdline detection (e.g. /etc/default/grub:GRUB_CMDLINE_LINUX)."
     fi
 }
 
