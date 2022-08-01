@@ -8,6 +8,14 @@ HAS_GRUB2="$(test -f /boot/grub2/grub.cfg && echo 1 || echo 0)"
 HAS_SYSTEMD="$(test -f /usr/bin/systemctl && echo 1 || echo 0)"
 HAS_NM="$(test -f /usr/bin/nmcli && echo 1 || echo 0)"
 
+uninstall_previous() {
+    if [ -f "/usr/local/sbin/uninstall-openwrt-iscsi-target.sh" ]; then
+        echo "Previous version detected, uninstalling before continuing..."
+        /usr/local/sbin/uninstall-openwrt-iscsi-target.sh
+        echo "Previous version uninstalled, continuing with installation"
+    fi
+}
+
 enable_dracut_iscsi() {
     echo "Enabling iSCSI Initiator support in Dracut initramfs"
     install -m 0644 -T src/dracut.conf /etc/dracut.conf.d/90-openwrt-iscsi-target.conf
@@ -59,6 +67,7 @@ set_bootif_unmanaged() {
     fi
 }
 
+uninstall_previous
 enable_dracut_iscsi
 install_boot_entry
 preserve_kernel_cmdline
