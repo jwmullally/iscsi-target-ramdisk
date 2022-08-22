@@ -44,9 +44,9 @@ Try this out first with the VM images in [`test`](test) to see how it works.
 
 *!! This solution makes slight changes to your `/boot` files. Before continuing, ensure you have a backup bootdisk/CD/USB in case anything goes wrong.*
 
-*!! Currently there is NO ENCRYPTION for the iSCSI endpoint. See TODO below. For now, only run this on a trusted network with trusted hosts.*
+*!! Currently there is NO ENCRYPTION for the iSCSI endpoint. See TODO below. For now, only run this on a trusted network with trusted hosts. Even if your main root partition is encrypted (e.g. with LUKS), MITM attacks are still be possible on the boot files.*
 
-While remote booting, treat disconnecting the network cable like unplugging your harddrive while your computer is running. The `iscsid` initiator with the default settings should be able to recover from disconnects and reboots of the target (you can experiment with this in the test VMs by the disabling/enabling ethernet links). Changing the settings of the network interface carrying the iSCSI traffic can also bring the interface down, so where we can we set it to unmanaged with static IP allocations.
+While remote booting, treat disconnecting the network cable like unplugging your harddrive while your computer is running. The `iscsid` initiator with the default settings should be able to recover from disconnects and reboots of the target (you can experiment with this in the test VMs by the disabling/enabling ethernet links). Changing the settings of the network interface carrying the iSCSI traffic can also bring the interface down, so where we can we set it to unmanaged with permanent DHCP leases.
 
 
 ## Installation
@@ -101,7 +101,7 @@ sudo dependencies/debian/install.sh
 sudo ./install.sh
 ```
 
-NOTE: This replaces `initramfs-tools` with `dracut`.
+NOTE: This replaces [`initramfs-tools`](https://packages.debian.org/sid/initramfs-tools) with [`dracut`](https://packages.debian.org/sid/dracut) ([README.Debian](https://sources.debian.org/src/dracut/sid/debian/dracut-core.README.Debian/)).
 
 ### Fedora
 
@@ -233,7 +233,7 @@ On the initiator host (the one to run the OS on):
 
 Typical Linux distributions use a simple boot loader (e.g. GRUB) to load the Linux Kernel and an [Initial ramdisk](https://en.wikipedia.org/wiki/Initial_ramdisk) mini root file system. The purpose of this root filesystem is to do everything necessary to prepare the storage block devices and mount the real root filesystem. This provides the OS with great flexibility about how the root filesystem is stored, for example on different types of network storage, logical volumes, RAID arrays, encrypted filesystems etc. All the configuration and complexity is handled by software in the Initial Ramdisk; all the kernel needs is a final mounted directory it can chroot, and continue the init boot sequence.
 
-Here we add the existing Dracut iSCSI initiator module to the OS's initramfs, which is designed for booting systems installed to remote iSCSI block devices. It stays deactivated and out of the way unless the `netroot:iscsi:...` kernel cmdline arguments are supplied. When activated, the disk's block devices show up on the system just as if they were locally attached. Modern Linux distributions use UUID-based partition identification in `/etc/fstab`, which makes mounting work deterministically regardless of the names of the underlying block devices (e.g. /dev/sda, /dev/sdb ordering can change based on the order drives or USB keys are inserted). In practice, this means you can do upgrades, kernel updates, bootloader changes, etc. as if you were doing them on the original computer. On modern systems, you should get full 1GB/s transfer speed and relatively low IOP latency. As modern Linux distributions are mostly plug and play, there should be little issue with your OS seeing a completely different set of hardware.
+Here we add the existing Dracut iSCSI initiator module to the OS's initramfs, which is designed for booting systems installed to remote iSCSI block devices. It stays deactivated and out of the way unless the `netroot:iscsi:...` kernel cmdline arguments are supplied. When activated, the disk's block devices show up on the system just as if they were locally attached. Modern Linux distributions use UUID-based partition identification in `/etc/fstab`, which makes mounting work deterministically regardless of the names of the underlying block devices (e.g. `/dev/sda`, `/dev/sdb` ordering can change based on the order drives or USB keys are inserted). In practice, this means you can do upgrades, kernel updates, bootloader changes, etc. as if you were doing them on the original computer. On modern systems, you should get full 1GB/s transfer speed and relatively low IOP latency. As modern Linux distributions are mostly plug and play, there should be little issue with your OS seeing a completely different set of hardware.
 
 To share the OS drives, we can't use the original OS itself, as only one system can be reading/writing the devices at a time (otherwise disk corruption would result), so instead we use a stateless ramdisk image built using the OpenWrt ImageBuilder. OpenWrt is a very flexible embedded system platform, specializing in network routing with a large number of packages available. This image has been configured to automatically share the drives with iSCSI and the kernel+initramfs files with PXE after booting. The separate OpenWrt system also means you don't have to reconfigure your OS to do all this sharing, and you can easily customize it further by adding more files and packages.
 
@@ -257,9 +257,13 @@ Match OpenWrt structure and conventions as much as possible.
 
 * Sort "OpenWrt iSCSI Target" entry under OS entries in bootloader menu.
 
-* Change iSCSI from userspace TGT to in-kernel LIO ([rough comparison](doc/rough_comparison_lio_vs_tgtd.png)).
+* [OpenWrt tgtd](https://github.com/openwrt/packages/blob/master/net/tgt/files/tgt.init): Support CRC32 Header + Data digests.
 
-* Set custom user class to always fetch newest iPXE
+* [OpenWrt kernel](https://github.com/openwrt/openwrt/blob/master/package/kernel/linux/modules/block.mk): Add LIO iSCSI target support, use instead of TGT ([rough comparison](doc/rough_comparison_lio_vs_tgtd.png)).
+
+* Set custom DHCP user class to always fetch newest iPXE.
+
+* [dracut iscsi](https://github.com/dracutdevs/dracut/blob/master/modules.d/95iscsi/iscsiroot.sh): Re-add support for `rd.iscsi.param` when `rd.iscsi.firmware` is used (for setting `node.session.timeo.replacement_timeout=0` for iBFT).
 
 
 ## Reference
@@ -273,6 +277,20 @@ Match OpenWrt structure and conventions as much as possible.
 [dracut.conf(5)](http://man7.org/linux/man-pages/man5/dracut.conf.5.html).
 
 [BootLoaderSpec](https://www.freedesktop.org/wiki/Specifications/BootLoaderSpec/).
+
+[systemd kernel-command-line(7)](https://www.freedesktop.org/software/systemd/man/kernel-command-line.html).
+
+[OpenWrt](https://openwrt.org/docs/start).
+
+[OpenWrt - UCI configuration](https://openwrt.org/docs/guide-user/base-system/uci).
+
+[OpenWrt - DHCP](https://openwrt.org/docs/guide-user/base-system/dhcp).
+
+[OpenWrt - iSCSI](https://openwrt.org/docs/guide-user/services/nas/iscsi).
+
+[OpenWrt - Image Builder](https://openwrt.org/docs/guide-user/additional-software/imagebuilder).
+
+[iSCSI Security](https://www.blackhat.com/presentations/bh-usa-05/bh-us-05-Dwivedi-update.pdf).
 
 
 ## Author

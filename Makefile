@@ -1,13 +1,13 @@
 ALL_CURL_OPTS := $(CURL_OPTS) -L --fail --create-dirs
 
 #VERSION := 22.03-SNAPSHOT
-VERSION := 22.03.0-rc5
+VERSION := 22.03.0-rc6
 BOARD := x86
 SUBTARGET := 64
 BUILDER := openwrt-imagebuilder-$(VERSION)-$(BOARD)-$(SUBTARGET).Linux-x86_64
 PROFILE := generic
 EXTRA_IMAGE_NAME := iscsi-target
-# Example WiFi support: "wpad-wolfssl kmod-iwlwifi iwlwifi-firmware-iwl8265"
+# Example WiFi support: "wpad-openssl kmod-iwlwifi iwlwifi-firmware-iwl8265"
 # Example Emulated device support: "kmod-veth wpad-openssl kmod-mac80211-hwsim"
 PACKAGES := luci tgt blkid lsblk iperf3 luci-app-commands atop tcpdump ethtool -libustream-wolfssl libustream-openssl luci-ssl-openssl
 
