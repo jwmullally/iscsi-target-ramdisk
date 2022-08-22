@@ -170,7 +170,7 @@ It's important that the BOOTIF interface stay running as the root filesystem can
 
 On the OpenWrt target:
 
-* Check `/srv/tftp/bootentries/menu.ipxe` and `/srv/tftp/bootentries` contain the expected kernels.
+* Check `/srv/pxe/bootentries/menu.ipxe` and `/srv/pxe/bootentries` contain the expected kernels.
 
   * Update `/etc/config/bootentries` and rerun `/etc/init.d/bootentries restart` to try find them again.
 
@@ -196,27 +196,27 @@ On the initiator:
 On the target host (containing the OS to remote boot):
 
 * `OpenWrt iSCSI Target` boots with its own kernel and stateless initramfs.
-* [`/etc/init.d/bootentries`](src/rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/tftp/bootentries` and creates entries in `/srv/tftp/bootentries/menu.ipxe`.
+* [`/etc/init.d/bootentries`](src/rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/pxe/bootentries` and creates entries in `/srv/pxe/bootentries/menu.ipxe`.
   * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries).
   * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, entries are created for all kernels matching `/boot/vmlinuz-*` along with their matching initramfs file and the `cmdline_default` arguments.
   * The contents of `cmdline_iscsi` are appended to the cmdline, which include the `netroot:iscsi:...` paramaters.
 * `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets.
   * Configuration: [`/etc/uci-defaults/85-custom-tgt`](src/rootfs/etc/uci-defaults/85-custom-tgt).
-* `/etc/init.d/dnsmasq` starts which provides DHCP, DHCP boot and serves `/srv/tftp` via TFTP. The DHCP allocation pool is limited to one available address to prevent accidental concurrent booting from separate machines and provide some subnet isolation. The DHCP lease time is set to infinite.
+* `/etc/init.d/dnsmasq` starts which provides DHCP, DHCP boot and serves `/srv/pxe` via TFTP. The DHCP allocation pool is limited to one available address to prevent accidental concurrent booting from separate machines and provide some subnet isolation. The DHCP lease time is set to infinite.
   * Configuration: [`/etc/uci-defaults/90-custom-dhcp`](src/rootfs/etc/uci-defaults/90-custom-dhcp).
-* `/etc/init.d/uhttpd` starts and serves `/srv/tftp` via HTTP access.
+* `/etc/init.d/uhttpd` starts and serves `/srv/pxe` via HTTP access.
   * Configuration: [`/etc/uci-defaults/95-custom-uhttpd`](src/rootfs/etc/uci-defaults/95-custom-uhttpd).
-  * HTTP BASIC authentication is used to protect `/srv/tftp/bootentries` containing the boot images and configuration.
+  * HTTP BASIC authentication is used to protect `/srv/pxe/bootentries` containing the boot images and configuration.
   * The [`/etc/init.d/pxe_access`](src/rootfs/etc/init.d/pxe_access) service can be used to enable/disable access to these files.
 
 On the initiator host (the one to run the OS on):
 
 * The BIOS starts PXE boot.
 * The PXE ROM requests and receives a DHCP boot response, pointing to the iPXE binary on TFTP.
-* iPXE is downloaded and executed, which issues another DHCP request and fetches `/srv/tftp/ipxe/entry.ipxe` over TFTP.
+* iPXE is downloaded and executed, which issues another DHCP request and fetches `/srv/pxe/ipxe/entry.ipxe` over TFTP.
 * The user enters a username / password which are used as the authorization for the PXE HTTP requests.
   * Caution: Boot files and iSCSI credentials can still be sniffed as they are transferred over the network. Only use on a physically secure network or direct connection.
-* iPXE chainloads `/srv/tftp/bootentries/menu.ipxe` over HTTP.
+* iPXE chainloads `/srv/pxe/bootentries/menu.ipxe` over HTTP.
 * (Optional, default) The iSCSI target connection details are stored in the iBFT ACPI table.
 * The user selects a kernel to boot.
 * iPXE fetches the kernel and associated initramfs over HTTP.

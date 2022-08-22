@@ -22,7 +22,7 @@ bootentries_config() {
 		return 1
 	}
 
-	cat > /srv/tftp/ipxe/entry.ipxe <<EOF
+	cat > /srv/pxe/ipxe/entry.ipxe <<EOF
 #!ipxe
   
 login
@@ -30,8 +30,8 @@ set boot-url http://\${username:uristring}:\${password:uristring}@$(uci get netw
 chain \${boot-url}bootentries/menu.ipxe
 EOF
 
-	rm -rf /srv/tftp/bootentries
-	mkdir /srv/tftp/bootentries
+	rm -rf /srv/pxe/bootentries
+	mkdir /srv/pxe/bootentries
 
 	cat > /tmp/partial.ipxe.header.tmp <<EOF
 #!ipxe
@@ -91,15 +91,15 @@ EOF
 			OPTIONS="$(sed -n 's/^options[ \t]*\(.*\)/\1/p' $entry | sed 's/ quiet//g')"
 			if [ -n "$TITLE" -a -n "$KERNEL_PATH" -a -n "$INITRD_PATH" ]; then
 				LABEL="$(basename "$entry")"
-				mkdir -p "/srv/tftp/bootentries/$LABEL"
+				mkdir -p "/srv/pxe/bootentries/$LABEL"
 				KERNEL_FILE="$(basename "$KERNEL_PATH")"
 				INITRD_FILE="$(basename "$INITRD_PATH")"
 				KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
 				INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
-				cp "/mnt/$boot_path/$KERNEL_PATH" "/srv/tftp/$KERNEL_IMG"
-				cp "/mnt/$boot_path/$INITRD_PATH" "/srv/tftp/$INITRD_IMG"
-				chmod 644 "/srv/tftp/$KERNEL_IMG"
-				chmod 644 "/srv/tftp/$INITRD_IMG"
+				cp "/mnt/$boot_path/$KERNEL_PATH" "/srv/pxe/$KERNEL_IMG"
+				cp "/mnt/$boot_path/$INITRD_PATH" "/srv/pxe/$INITRD_IMG"
+				chmod 644 "/srv/pxe/$KERNEL_IMG"
+				chmod 644 "/srv/pxe/$INITRD_IMG"
 				echo -e "item $LABEL $TITLE" >> /tmp/partial.ipxe.menu.tmp
 		
 				echo -e "" >> /tmp/partial.ipxe.contents.tmp
@@ -126,13 +126,13 @@ EOF
 				continue
 			fi
 			LABEL="$KERNEL_FILE"
-			mkdir -p "/srv/tftp/bootentries/$LABEL"
+			mkdir -p "/srv/pxe/bootentries/$LABEL"
 			KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
 			INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
-			cp "/mnt/$boot_path/$KERNEL_FILE" "/srv/tftp/$KERNEL_IMG"
-			cp "/mnt/$boot_path/$INITRD_FILE" "/srv/tftp/$INITRD_IMG"
-			chmod 644 "/srv/tftp/$KERNEL_IMG"
-			chmod 644 "/srv/tftp/$INITRD_IMG"
+			cp "/mnt/$boot_path/$KERNEL_FILE" "/srv/pxe/$KERNEL_IMG"
+			cp "/mnt/$boot_path/$INITRD_FILE" "/srv/pxe/$INITRD_IMG"
+			chmod 644 "/srv/pxe/$KERNEL_IMG"
+			chmod 644 "/srv/pxe/$INITRD_IMG"
 			echo -e "item $LABEL $LABEL" >> /tmp/partial.ipxe.menu.tmp
 	
 			echo -e "" >> /tmp/partial.ipxe.contents.tmp
@@ -175,7 +175,7 @@ EOF
 		/tmp/partial.ipxe.header.tmp \
 		/tmp/partial.ipxe.menu.tmp \
 		/tmp/partial.ipxe.contents.tmp \
-		> /srv/tftp/bootentries/menu.ipxe
+		> /srv/pxe/bootentries/menu.ipxe
 	rm -f /tmp/partial.ipxe.*.tmp
 	if [ "$entries_found" = "0" ]; then
 		echo "Could not find any boot entries for PXE TFTP boot"

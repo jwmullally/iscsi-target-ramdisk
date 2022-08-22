@@ -38,12 +38,12 @@ rootfs-contents: $(BUILD_DIR)/downloads
 	rm -rf $(BUILD_DIR)/rootfs
 	cp -rv src/rootfs $(BUILD_DIR)/rootfs
 	cp -f $(BUILD_DIR)/$(BUILDER)/target/linux/generic/other-files/init $(BUILD_DIR)/rootfs/
-	mkdir -p $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86
-	cp -f $(BUILD_DIR)/downloads/ipxe/x86/ipxe.pxe $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86
-	cp -f $(BUILD_DIR)/downloads/ipxe/x86/undionly.kpxe $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86
-	mkdir -p $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86_64
-	cp -f $(BUILD_DIR)/downloads/ipxe/x86_64/ipxe.efi $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86_64
-	cp -f $(BUILD_DIR)/downloads/ipxe/x86_64/snponly.efi $(BUILD_DIR)/rootfs/srv/tftp/ipxe/x86_64
+	mkdir -p $(BUILD_DIR)/rootfs/srv/pxe/ipxe/x86
+	cp -f $(BUILD_DIR)/downloads/ipxe/x86/ipxe.pxe $(BUILD_DIR)/rootfs/srv/pxe/ipxe/x86
+	cp -f $(BUILD_DIR)/downloads/ipxe/x86/undionly.kpxe $(BUILD_DIR)/rootfs/srv/pxe/ipxe/x86
+	mkdir -p $(BUILD_DIR)/rootfs/srv/pxe/ipxe/x86_64
+	cp -f $(BUILD_DIR)/downloads/ipxe/x86_64/ipxe.efi $(BUILD_DIR)/rootfs/srv/pxe/ipxe/x86_64
+	cp -f $(BUILD_DIR)/downloads/ipxe/x86_64/snponly.efi $(BUILD_DIR)/rootfs/srv/pxe/ipxe/x86_64
 
 
 $(BUILD_DIR)/$(BUILDER): $(BUILD_DIR)/downloads

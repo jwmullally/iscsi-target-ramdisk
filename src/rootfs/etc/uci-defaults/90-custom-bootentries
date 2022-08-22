@@ -2,7 +2,7 @@
 set -e
 
 # Settings for copying kernel images from your device's disk to the ramdisk's
-# TFTP boot folder. Customize this for your specific partitions.
+# PXE boot folder. Customize this for your specific partitions.
 
 uci import bootentries < /dev/null
 uci add bootentries bootentries
