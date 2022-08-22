@@ -77,7 +77,7 @@ You'll mainly just want to update:
 
   * Update the list of of block devices to share as iSCSI LUNs.
 
-* [`src/rootfs/etc/uci-defaults/90-custom-password`](src/rootfs/etc/uci-defaults/90-custom-password)
+* [`src/rootfs/usr/lib/opkg/info/custom-password.postinst`](src/rootfs/usr/lib/opkg/info/custom-password.postinst)
 
 And review:
 

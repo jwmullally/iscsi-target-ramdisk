@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+# Disable unauthenticated failsafe mode
+# Equivilant to CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE=y
+
+sed -i -e 's/pi_preinit_no_failsafe=.*$/pi_preinit_no_failsafe="y"/' ${IPKG_INSTROOT}/lib/preinit/00_preinit.conf
