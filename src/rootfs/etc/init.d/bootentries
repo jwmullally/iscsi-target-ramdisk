@@ -149,11 +149,13 @@ EOF
 
 	if [ "$ibft" = "1" ]; then
 		echo -e "set initiator-iqn $(uci get tgt.1.allow_name)" >> /tmp/partial.ipxe.header.tmp
-		echo -e "set username $(uci get tgt.in_user.user)" >> /tmp/partial.ipxe.header.tmp
-		echo -e "set password $(uci get tgt.in_user.password)" >> /tmp/partial.ipxe.header.tmp
+		echo -e "set username $(uci get tgt.user_in.user)" >> /tmp/partial.ipxe.header.tmp
+		echo -e "set password $(uci get tgt.user_in.password)" >> /tmp/partial.ipxe.header.tmp
+		echo -e "set reverse-username $(uci get tgt.user_out.user)" >> /tmp/partial.ipxe.header.tmp
+		echo -e "set reverse-password $(uci get tgt.user_out.password)" >> /tmp/partial.ipxe.header.tmp
 
 		lun_idx=0
-		drive_idx=128    # 0x80
+		drive_idx="$(printf "%i" "0x80")"
 		while uci get tgt.@lun[$lun_idx] &> /dev/null ; do
 			lun_idx=$((lun_idx+1));
 			target_uri="iscsi:$(uci get network.lan.ipaddr):::$lun_idx:$(uci get tgt.1.name)"

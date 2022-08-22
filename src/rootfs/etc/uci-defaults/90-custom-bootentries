@@ -33,9 +33,11 @@ rd.shell \
 rd.retry=5 \
 netroot=iscsi \
 rd.iscsi.firmware=1 \
-rd.iscsi.param=node.session.timeo.replacement_timeout=-1 \
 ifname=bootnet:\${netX/mac} \
 ip=bootnet:dhcp \
+systemd.mask=sleep.target \
+systemd.mask=suspend.target \
+systemd.mask=hibernate.target \
 "
 
 # # Don't use iBFT. Specify iSCSI connection details directly using the kernel
@@ -49,13 +51,18 @@ ip=bootnet:dhcp \
 # uci set bootentries.@bootentries[0].cmdline_iscsi="\
 # rd.shell \
 # rd.retry=5 \
-# rd.iscsi.initiator=$(uci get tgt.1.allow_name) \
 # netroot=iscsi:$(uci get network.lan.ipaddr)::::$(uci get tgt.1.name) \
-# rd.iscsi.username=$(uci get tgt.in_user.user) \
-# rd.iscsi.password=$(uci get tgt.in_user.password) \
+# rd.iscsi.initiator=$(uci get tgt.1.allow_name) \
+# rd.iscsi.username=$(uci get tgt.user_in.user) \
+# rd.iscsi.password=$(uci get tgt.user_in.password) \
+# rd.iscsi.in.username=$(uci get tgt.user_out.user) \
+# rd.iscsi.in.password=$(uci get tgt.user_out.password) \
 # rd.iscsi.param=node.session.timeo.replacement_timeout=-1 \
 # ifname=bootnet:\${netX/mac} \
 # ip=bootnet:dhcp \
+# systemd.mask=sleep.target \
+# systemd.mask=suspend.target \
+# systemd.mask=hibernate.target \
 # "
 
 # Remove these from any found cmdlines (TODO)

@@ -6,7 +6,9 @@ set -e
 
 # For dynamic password generation every boot, use the following. However this
 # would also prevent initiator reconnection when the target reboots.
+#
 #     option password "$(cat /dev/urandom | env LC_CTYPE=C tr -dc 023456789ABCDEF | head -c 16)"
+#
 
 uci import tgt <<EOF
 config options 'tgt'
@@ -18,10 +20,16 @@ config target '1'
 	list allow_name 'iqn.2018-04.org.example:client-host'
 	list allow_address '192.168.200.2'
 
-config account 'in_user'
+config account 'user_in'
 	list target '1'
-	option user 'iscsiuser'
+	option user 'iscsiuser_in'
 	option password 'pass1234'
+
+config account 'user_out'
+	list target '1'
+	option user 'iscsiuser_out'
+	option password 'pass5678'
+	option outgoing '1'
 EOF
 
 # Find parent disk from partition UUID
