@@ -249,6 +249,8 @@ Match OpenWrt structure and conventions as much as possible.
 
 ## TODO
 
+* Support dnsmasq ProxyDHCP to use with existing DHCP networks.
+
 * Debian: Tips for disabling default open-iscsi service by default during normal use to prevent error.
 
 * [MACSEC L2 encryption](https://developers.redhat.com/blog/2016/10/14/macsec-a-different-solution-to-encrypt-network-traffic/) or iSCSI + TLS.
