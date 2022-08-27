@@ -9,6 +9,7 @@ USE_PROCD=1
 start_service() {
 
 	uci set dhcp.@dnsmasq[0].enable_tftp='1'
+	uci set dhcp.lan.ignore='0'
 	uci commit dhcp
 	/etc/init.d/dnsmasq reload
 
@@ -23,6 +24,7 @@ start_service() {
 stop_service() {
 
 	uci set dhcp.@dnsmasq[0].enable_tftp='0'
+	uci set dhcp.lan.ignore='1'
 	uci commit dhcp
 	/etc/init.d/dnsmasq reload
 

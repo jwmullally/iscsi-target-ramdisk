@@ -51,7 +51,7 @@ systemd.mask=hibernate.target \
 # uci set bootentries.@bootentries[0].cmdline_iscsi="\
 # rd.shell \
 # rd.retry=5 \
-# netroot=iscsi:$(uci get network.lan.ipaddr)::::$(uci get tgt.1.name) \
+# netroot=iscsi:\${target-server-ip}::::$(uci get tgt.1.name) \
 # rd.iscsi.initiator=$(uci get tgt.1.allow_name) \
 # rd.iscsi.username=$(uci get tgt.user_in.user) \
 # rd.iscsi.password=$(uci get tgt.user_in.password) \

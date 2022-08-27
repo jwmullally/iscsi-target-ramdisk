@@ -22,11 +22,16 @@ bootentries_config() {
 		return 1
 	}
 
+	. /lib/functions/network.sh
+	network_flush_cache
+	network_get_ipaddr lan_addr "lan"
+
 	cat > /srv/pxe/tftp/ipxe/entry.ipxe <<EOF
 #!ipxe
   
 login
-set boot-url http://\${username:uristring}:\${password:uristring}@$(uci get network.lan.ipaddr):81/
+set target-server-ip $lan_addr
+set boot-url http://\${username:uristring}:\${password:uristring}@\${target-server-ip}:81/
 chain \${boot-url}bootentries/menu.ipxe
 EOF
 
@@ -158,7 +163,7 @@ EOF
 		drive_idx="$(printf "%i" "0x80")"
 		while uci get tgt.@lun[$lun_idx] &> /dev/null ; do
 			lun_idx=$((lun_idx+1));
-			target_uri="iscsi:$(uci get network.lan.ipaddr):::$lun_idx:$(uci get tgt.1.name)"
+			target_uri="iscsi:\${target-server-ip}:::$lun_idx:$(uci get tgt.1.name)"
 			drive="$(printf "%x" "$drive_idx")"
 			drive_idx=$((drive_idx+1));
 			echo "sanhook --drive 0x$drive $target_uri" >> /tmp/partial.ipxe.header.tmp
