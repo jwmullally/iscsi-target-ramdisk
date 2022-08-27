@@ -10,7 +10,8 @@ EOF
 uci -q batch << EOF
 set uhttpd.srv_pxe='uhttpd'
 set uhttpd.srv_pxe.home='/srv/pxe/'
-set uhttpd.srv_pxe.listen_http='0.0.0.0:81' '[::]:81'
+add_list uhttpd.srv_pxe.listen_http='0.0.0.0:81'
+add_list uhttpd.srv_pxe.listen_http='[::]:81'
 set uhttpd.srv_pxe.config='/etc/httpd.srv_pxe.conf'
 
 commit uhttd

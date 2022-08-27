@@ -8,17 +8,18 @@ USE_PROCD=1
 
 start_service() {
 
-	uci set dhcp.@dnsmasq[0].enable_tftp='1'
-	uci set dhcp.lan.ignore='0'
-	uci commit dhcp
-	/etc/init.d/dnsmasq reload
+	if [ "$(uci get dhcp.lan.ignore)" == "1" -a "$(uci get uhttpd.srv_pxe.listen_http)" = "127.0.0.1:81" ]; then
+		uci set dhcp.@dnsmasq[0].enable_tftp='1'
+		uci set dhcp.lan.ignore='0'
+		uci commit dhcp
+		/etc/init.d/dnsmasq reload
 
-	uci delete uhttpd.srv_pxe.listen_http
-	uci add_list uhttpd.srv_pxe.listen_http='0.0.0.0:81'
-	uci add_list uhttpd.srv_pxe.listen_http='[::]:81'
-	uci commit uhttpd
-	/etc/init.d/uhttpd reload
-
+		uci delete uhttpd.srv_pxe.listen_http
+		uci add_list uhttpd.srv_pxe.listen_http='0.0.0.0:81'
+		uci add_list uhttpd.srv_pxe.listen_http='[::]:81'
+		uci commit uhttpd
+		/etc/init.d/uhttpd reload
+	fi
 }
 
 stop_service() {
