@@ -22,9 +22,14 @@ bootentries_config() {
 		return 1
 	}
 
+	sleep 10	# Wait for DHCP allocation. TODO: Replace with service retry
 	. /lib/functions/network.sh
 	network_flush_cache
 	network_get_ipaddr lan_addr "lan"
+	if [ -z "${lan_addr}" ]; then
+		echo "LAN IP address not yet set, not generating /srv/pxe/ configuration"
+		return 1
+	fi
 
 	cat > /srv/pxe/tftp/ipxe/entry.ipxe <<EOF
 #!ipxe
@@ -32,7 +37,7 @@ bootentries_config() {
 login
 set target-server-ip $lan_addr
 set boot-url http://\${username:uristring}:\${password:uristring}@\${target-server-ip}:81/
-chain \${boot-url}bootentries/menu.ipxe
+chain \${boot-url}cgi-bin/get-menu-ipxe
 EOF
 
 	rm -rf /srv/pxe/bootentries

@@ -6,7 +6,9 @@ This folder contains scripts to generate minimal Linux VM images for different d
 
 Hardcoded partition UUIDs are used so that we can set the configuration deterministically.
 
-Each VM has 2 network interfaces, one connected to the regular NAT'd libvirt network for external connectivity, and one connected to the `isolated` network. The `isolated` network has the host DHCP server disabled, so the test target VM can provide DHCP and PXE boot directly to the initiator VM without interference from the host's DHCP server.
+Each VM has 2 network interfaces, one connected to the regular `NAT` libvirt network for external connectivity, and one connected to the `isolated` network. The `isolated` network has the host DHCP server disabled, so the test target VM can provide DHCP and PXE boot directly to the initiator VM without interference from the host's DHCP server.
+
+To test PXE DHCP Proxy mode when an existing DHCP server is present (in this case the built-in libvirt dnsmasq server), swap the `isolated` and `NAT` network connections on both the target and initiator VMs.
 
 ### Example workflow
 

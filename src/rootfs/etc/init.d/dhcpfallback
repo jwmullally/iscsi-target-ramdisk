@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+USE_PROCD=1
+
+start_service() {
+	. /lib/functions/network.sh
+	sleep 15
+	network_flush_cache
+	network_get_ipaddr lan_addr "lan"
+	if [ -n "${lan_addr}" ]; then
+		echo -e "\nLAN IP address [DHCP]: ${lan_addr}" > /dev/console
+		echo "LAN DHCP configuration complete, not falling back to static IP."
+		return 0
+	fi
+
+	echo "LAN DHCP failed, falling back to static IP..."
+
+	uci set network.lan.proto='static'
+	uci set network.lan.ipaddr='192.168.200.1'	# TODO: get this from config
+	uci commit network
+
+	uci set dhcp.lan.proxy='0'
+	uci delete dhcp.@dnsmasq[0].pxe_prompt
+	uci delete dhcp.@dnsmasq[0].pxe_service
+	uci commit dhcp
+
+	/etc/init.d/network restart
+	/etc/init.d/dnsmasq restart
+	/etc/init.d/bootentries restart
+
+	echo -e "\nLAN IP address [static]: $(uci get network.lan.ipaddr)" > /dev/console
+}

@@ -2,7 +2,20 @@
 set -e
 
 uci -q batch << EOF
-set network.lan.ipaddr='192.168.200.1'
 set network.@device[0].bridge_empty='1'
+
+# Static IP for LAN interface
+#
+#set network.lan.proto='static'
+#set network.lan.ipaddr='192.168.200.1'
+
+# DHCP for LAN interface
+# Will be set back to 'static' by /etc/init.d/dhcpfallback if no
+# existing DHCP server is found.
+
+set network.lan.proto='dhcp'
+del network.lan.ipaddr
+del network.lan.ip6assign
+
 commit network
 EOF

@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+# Apply custom patches to filesystem during image build
+
+if [ -n "${IPKG_INSTROOT}" ]; then
+	for p in $(ls "${IPKG_INSTROOT}/usr/share/patches/"); do
+		patch_path="${IPKG_INSTROOT}/usr/share/patches/$p"
+		patch --posix --no-backup-if-mismatch -d "${IPKG_INSTROOT}/" -p1 < "$patch_path"
+		rm -f "$patch_path"
+	done
+fi

@@ -1,0 +1,37 @@
+dnsmasq: Support PXE Proxy DHCP option in --dhcp-range.
+
+--- a/etc/init.d/dnsmasq	2022-08-27 20:28:27.877031399 +0100
++++ b/etc/init.d/dnsmasq	2022-08-27 20:57:56.378722678 +0100
+@@ -534,15 +534,17 @@
+ 	network_get_subnet subnet "$net" || return 0
+ 	network_get_protocol proto "$net" || return 0
+ 
++	config_get_bool proxy "$cfg" proxy 0
++
+ 	# Do not support non-static interfaces for now
+-	[ static = "$proto" ] || return 0
++	[ static = "$proto" -o "$proxy" = "1" ] || return 0
+ 
+ 	# Override interface netmask with dhcp config if applicable
+ 	config_get netmask "$cfg" netmask "${subnet##*/}"
+ 
+ 	#check for an already active dhcp server on the interface, unless 'force' is set
+ 	config_get_bool force "$cfg" force 0
+-	[ $force -gt 0 ] || dhcp_check "$ifname" || {
++	[ $force -gt 0 -o "$proxy" = "1" ] || dhcp_check "$ifname" || {
+ 		logger -t dnsmasq \
+ 			"found already running DHCP-server on interface '$ifname'" \
+ 			"refusing to start, use 'option force 1' to override"
+@@ -583,7 +585,11 @@
+ 
+ 	eval "$(ipcalc.sh "${subnet%%/*}" $netmask $start $limit)"
+ 
+-	if [ "$dynamicdhcp" = "0" ] ; then
++	if [ "$proxy" = "1" ]; then
++		START="${subnet%%/*}"
++		END="proxy"
++		dhcp6range="::,proxy"
++	elif [ "$dynamicdhcp" = "0" ] ; then
+ 		END="static"
+ 		dhcp6range="::,static"
+ 	else

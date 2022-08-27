@@ -24,7 +24,7 @@ You can also customize the OpenWrt ramdisk with any additional network configura
 
 If you want to share network/WiFi connections from the target to the initiator:
 
-* Connect to <http://192.168.200.1> to access the OpenWrt Admin UI and configure network routing / WiFi, etc.
+* Connect to <http://192.168.200.1> (or the DHCP assigned IP) to access the OpenWrt Admin UI and configure network routing / WiFi, etc.
 
 
 ## Requirements
@@ -202,21 +202,28 @@ On the target host (containing the OS to remote boot):
   * The contents of `cmdline_iscsi` are appended to the cmdline, which include the `netroot:iscsi:...` paramaters.
 * `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets.
   * Configuration: [`/etc/uci-defaults/85-custom-tgt`](src/rootfs/etc/uci-defaults/85-custom-tgt).
-* `/etc/init.d/dnsmasq` starts which provides DHCP, DHCP boot and serves `/srv/pxe` via TFTP. The DHCP allocation pool is limited to one available address to prevent accidental concurrent booting from separate machines and provide some subnet isolation. The DHCP lease time is set to infinite.
+* ['/etc/init.d/network'] starts, which sets the first LAN interface to DHCP by default.
+  * Configuration: [`/etc/uci-defaults/80-custom-network`](src/rootfs/etc/uci-defaults/80-custom-network)
+* `/etc/init.d/dnsmasq` starts which provides PXE DHCP Proxy boot (to work alongside existing DHCP servers) and serves `/srv/pxe` via TFTP. Regular DHCP allocations are disabled by default.
   * Configuration: [`/etc/uci-defaults/90-custom-dhcp`](src/rootfs/etc/uci-defaults/90-custom-dhcp).
 * `/etc/init.d/uhttpd` starts and serves `/srv/pxe` via HTTP access.
   * Configuration: [`/etc/uci-defaults/95-custom-uhttpd`](src/rootfs/etc/uci-defaults/95-custom-uhttpd).
-  * HTTP BASIC authentication is used to protect `/srv/pxe/bootentries` containing the boot images and configuration.
+  * HTTP BASIC authentication is used to protect `/srv/pxe/bootentries` and `/srv/pxe/cgi-bin` containing the boot images and configuration.
   * The [`/etc/init.d/pxe_access`](src/rootfs/etc/init.d/pxe_access) service can be used to enable/disable access to these files.
+* [`/etc/init.d/dhcpfallback`](src/rootfs/etc/init.d/dhcpfallback) starts, which sets LAN to a static IP if no existing DHCP servers were found during the specified time frame.
+  * If activated, `/etc/config/dhcp` is also changed from PXE DHCP Proxy mode back to regular DHCP server mode.
 
 On the initiator host (the one to run the OS on):
 
 * The BIOS starts PXE boot.
 * The PXE ROM requests and receives a DHCP boot response, pointing to the iPXE binary on TFTP.
+  * If an existing DHCP server is present, that server will send a regular DHCP response, and the target host will send a separate PXE DHCP Proxy boot response containing just the boot information.
 * iPXE is downloaded and executed, which issues another DHCP request and fetches `/srv/pxe/ipxe/entry.ipxe` over TFTP.
 * The user enters a username / password which are used as the authorization for the PXE HTTP requests.
   * Caution: Boot files and iSCSI credentials can still be sniffed as they are transferred over the network. Only use on a physically secure network or direct connection.
-* iPXE chainloads `/srv/pxe/bootentries/menu.ipxe` over HTTP.
+* iPXE chainloads [`/srv/pxe/cgi-bin/get-menu-ipxe`](src/rootfs/srv/pxe/cgi-bin/get-menu-ipxe) over HTTP.
+  * iSCSI access for the requesting initiator host's IP address is allowed through the firewall.
+  * `/srv/pxe/bootentries/menu.ipxe` is returned and executed by iPXE.
 * (Optional, default) The iSCSI target connection details are stored in the iBFT ACPI table.
 * The user selects a kernel to boot.
 * iPXE fetches the kernel and associated initramfs over HTTP.
@@ -248,8 +255,6 @@ Match OpenWrt structure and conventions as much as possible.
 
 
 ## TODO
-
-* Support dnsmasq ProxyDHCP to use with existing DHCP networks.
 
 * Debian: Tips for disabling default open-iscsi service by default during normal use to prevent error.
 

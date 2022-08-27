@@ -13,40 +13,66 @@ set dhcp.@dnsmasq[0].logdhcp='1'
 set dhcp.@dnsmasq[0].enable_tftp='1'
 set dhcp.@dnsmasq[0].tftp_root='/srv/pxe/tftp'
 #set dhcp.@dnsmasq[0].dhcp_boot='ipxe/x86/ipxe.pxe'
+
+# When assigning DHCP allocations, use "infinite" leases to effictively make
+# them static, so that the iSCSI initiator hosts can use them indefinitely
+# without interruption and without refreshing them.
 set dhcp.lan.leasetime='infinite'
 set dhcp.lan.start='2'
-set dhcp.lan.limit='1'
-set dhcp.lan.force='1'
+set dhcp.lan.limit='8'
+set dhcp.lan.force='0'
+set dhcp.lan.ignore='0'
 
-add dhcp match
-set dhcp.@match[-1].networkid='pcbios'
-set dhcp.@match[-1].match='60,PXEClient:Arch:00000'
-
-add dhcp match
-set dhcp.@match[-1].networkid='efi_x86_64'
-set dhcp.@match[-1].match='60,PXEClient:Arch:00007'
-
-add dhcp match
-set dhcp.@match[-1].networkid='efi_x86_64'
-set dhcp.@match[-1].match='60,PXEClient:Arch:00009'
+# Start in dnsmasq DHCP Proxy mode by default, for use with existing DHCP servers.
+# Will be set back to '0' by /etc/init.d/dhcpfallback if no existing DHCP server
+# is found.
+set dhcp.lan.proxy='1'
 
 add dhcp userclass
 set dhcp.@userclass[-1].networkid='ipxe'
 set dhcp.@userclass[-1].userclass='iPXE'
 
+
+# DHCP Server: dnsmasq --dhcp-boot bootfile-name settings
+
+add dhcp boot
+set dhcp.@boot[-1].filename='tag:ipxe,ipxe/entry.ipxe'
+
+add dhcp match
+set dhcp.@match[-1].networkid='pcbios'
+set dhcp.@match[-1].match='60,PXEClient:Arch:00000'
 add dhcp boot
 set dhcp.@boot[-1].filename='tag:pcbios,tag:!ipxe,ipxe/x86/ipxe.pxe'
 #set dhcp.@boot[-1].filename='tag:pcbios,tag:!ipxe,ipxe/x86/undionly.kpxe'
 
-add dhcp boot
-set dhcp.@boot[-1].filename='tag:pcbios,tag:ipxe,ipxe/entry.ipxe'
-
+add dhcp match
+set dhcp.@match[-1].networkid='efi_x86_64'
+set dhcp.@match[-1].match='60,PXEClient:Arch:00007'
+add dhcp match
+set dhcp.@match[-1].networkid='efi_x86_64'
+set dhcp.@match[-1].match='60,PXEClient:Arch:00009'
 add dhcp boot
 set dhcp.@boot[-1].filename='tag:efi_x86_64,tag:!ipxe,ipxe/x86_64/ipxe.efi'
 #set dhcp.@boot[-1].filename='tag:efi_x86_64,tag:!ipxe,ipxe/x86_64/snponly.efi'
 
-add dhcp boot
-set dhcp.@boot[-1].filename='tag:efi_x86_64,tag:ipxe,ipxe/entry.ipxe'
+
+# DHCP PXE Proxy: dnsmasq --pxe-service bootfile-name settings
+# In normal DHCP server mode (dhcp.lan.proxy='0'), these must be removed to
+# workaround the following issue. /etc/init.d/dhcpfallback does this.
+# "pxe-service entries in dnsmasq conf seem to fail non-proxy EFI boot"
+# https://lists.thekelleys.org.uk/pipermail/dnsmasq-discuss/2021q1/014853.html
+
+set dhcp.@dnsmasq[0].pxe_prompt='$(uci get system.@system[0].hostname) - PXE Boot Menu'
+add_list dhcp.@dnsmasq[0].pxe_service='tag:!ipxe,x86PC,"$(uci get system.@system[0].hostname) x86PC iPXE",ipxe/x86/ipxe.pxe'
+#add_list dhcp.@dnsmasq[0].pxe_service='tag:!ipxe,x86PC,"$(uci get system.@system[0].hostname) x86PC iPXE",ipxe/x86/undionly.kpxe'
+add_list dhcp.@dnsmasq[0].pxe_service='tag:ipxe,x86PC,"$(uci get system.@system[0].hostname) x86PC entry.ipxe",ipxe/entry.ipxe'
+
+add_list dhcp.@dnsmasq[0].pxe_service='tag:!ipxe,x86-64_EFI,"$(uci get system.@system[0].hostname) x86-64_EFI iPXE",ipxe/x86_64/ipxe.efi'
+#add_list dhcp.@dnsmasq[0].pxe_service='tag:!ipxe,x86-64_EFI,"$(uci get system.@system[0].hostname) x86-64_EFI iPXE",ipxe/x86_64/snponly.efi'
+add_list dhcp.@dnsmasq[0].pxe_service='tag:ipxe,x86-64_EFI,"$(uci get system.@system[0].hostname) x86-64_EFI entry.ipxe",ipxe/entry.ipxe'
+add_list dhcp.@dnsmasq[0].pxe_service='tag:!ipxe,BC_EFI,"$(uci get system.@system[0].hostname) BC_EFI iPXE",ipxe/x86_64/ipxe.efi'
+#add_list dhcp.@dnsmasq[0].pxe_service='tag:!ipxe,BC_EFI,"$(uci get system.@system[0].hostname) BC_EFI iPXE",ipxe/x86_64/snponly.efi'
+add_list dhcp.@dnsmasq[0].pxe_service='tag:ipxe,BC_EFI,"$(uci get system.@system[0].hostname) BC_EFI entry.ipxe",ipxe/entry.ipxe'
 
 commit dhcp
 EOF
