@@ -11,5 +11,17 @@ set firewall.@rule[-1].src='wan'
 set firewall.@rule[-1].proto='tcp'
 set firewall.@rule[-1].dest_port='22 80 443'
 set firewall.@rule[-1].target='ACCEPT'
+set firewall.@rule[-1].enabled='1'
+
+uci batch << EOF
+set firewall.block_iscsi='rule'
+set firewall.block_iscsi.name='Block-iSCSI'
+add_list firewall.block_iscsi.proto='tcp'
+set firewall.block_iscsi.src='*'
+add_list firewall.block_iscsi.src_ip='!192.168.200.2'
+set firewall.block_iscsi.dest_port='3260'
+set firewall.block_iscsi.target='REJECT'
+set firewall.block_iscsi.enabled='1'
+
 commit firewall
 EOF

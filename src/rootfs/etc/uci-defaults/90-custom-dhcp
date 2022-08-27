@@ -11,7 +11,7 @@ set dhcp.@dnsmasq[0].local='/iscsi/'
 set dhcp.@dnsmasq[0].domain='iscsi'
 set dhcp.@dnsmasq[0].logdhcp='1'
 set dhcp.@dnsmasq[0].enable_tftp='1'
-set dhcp.@dnsmasq[0].tftp_root='/srv/pxe'
+set dhcp.@dnsmasq[0].tftp_root='/srv/pxe/tftp'
 #set dhcp.@dnsmasq[0].dhcp_boot='ipxe/x86/ipxe.pxe'
 set dhcp.lan.leasetime='infinite'
 set dhcp.lan.start='2'
@@ -37,24 +37,16 @@ set dhcp.@userclass[-1].userclass='iPXE'
 add dhcp boot
 set dhcp.@boot[-1].filename='tag:pcbios,tag:!ipxe,ipxe/x86/ipxe.pxe'
 #set dhcp.@boot[-1].filename='tag:pcbios,tag:!ipxe,ipxe/x86/undionly.kpxe'
-set dhcp.@boot[-1].serveraddress=$(uci get network.lan.ipaddr)
-set dhcp.@boot[-1].servername=$(uci get system.@system[0].hostname)
 
 add dhcp boot
 set dhcp.@boot[-1].filename='tag:pcbios,tag:ipxe,ipxe/entry.ipxe'
-set dhcp.@boot[-1].serveraddress=$(uci get network.lan.ipaddr)
-set dhcp.@boot[-1].servername=$(uci get system.@system[0].hostname)
 
 add dhcp boot
 set dhcp.@boot[-1].filename='tag:efi_x86_64,tag:!ipxe,ipxe/x86_64/ipxe.efi'
 #set dhcp.@boot[-1].filename='tag:efi_x86_64,tag:!ipxe,ipxe/x86_64/snponly.efi'
-set dhcp.@boot[-1].serveraddress=$(uci get network.lan.ipaddr)
-set dhcp.@boot[-1].servername=$(uci get system.@system[0].hostname)
 
 add dhcp boot
 set dhcp.@boot[-1].filename='tag:efi_x86_64,tag:ipxe,ipxe/entry.ipxe'
-set dhcp.@boot[-1].serveraddress=$(uci get network.lan.ipaddr)
-set dhcp.@boot[-1].servername=$(uci get system.@system[0].hostname)
 
 commit dhcp
 EOF

@@ -22,7 +22,7 @@ bootentries_config() {
 		return 1
 	}
 
-	cat > /srv/pxe/ipxe/entry.ipxe <<EOF
+	cat > /srv/pxe/tftp/ipxe/entry.ipxe <<EOF
 #!ipxe
   
 login

@@ -12,7 +12,9 @@ start_service() {
 	uci commit dhcp
 	/etc/init.d/dnsmasq reload
 
-	uci set uhttpd.srv_pxe.listen_http="$(uci get network.lan.ipaddr):81"
+	uci delete uhttpd.srv_pxe.listen_http
+	uci add_list uhttpd.srv_pxe.listen_http='0.0.0.0:81'
+	uci add_list uhttpd.srv_pxe.listen_http='[::]:81'
 	uci commit uhttpd
 	/etc/init.d/uhttpd reload
 
@@ -24,7 +26,8 @@ stop_service() {
 	uci commit dhcp
 	/etc/init.d/dnsmasq reload
 
-	uci set uhttpd.srv_pxe.listen_http="127.0.0.1:81"
+	uci delete uhttpd.srv_pxe.listen_http
+	uci add_list uhttpd.srv_pxe.listen_http='127.0.0.1:81'
 	uci commit uhttpd
 	/etc/init.d/uhttpd reload
 

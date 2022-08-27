@@ -17,8 +17,7 @@ config options 'tgt'
 
 config target '1'
 	option name 'iqn.2018-04.org.example:target-host'
-	list allow_name 'iqn.2018-04.org.example:client-host'
-	list allow_address '192.168.200.2'
+	list allow_name 'iqn.2018-04.org.example:initiator-host'
 
 config account 'user_in'
 	list target '1'

@@ -12,10 +12,10 @@ add luci command
 set luci.@command[-1].name='Enable PXE File Access'
 set luci.@command[-1].command='/etc/init.d/pxe_access start'
 
-add luci command
-set luci.@command[-1].name='Disable PXE File Access'
-set luci.@command[-1].command='/etc/init.d/pxe_access stop'
-set luci.@command[-1].public='1'
+set luci.cmd_pxe_disable='command'
+set luci.cmd_pxe_disable.name='Disable PXE File Access'
+set luci.cmd_pxe_disable.command='/etc/init.d/pxe_access stop'
+set luci.cmd_pxe_disable.public='1'
 
 commit luci
 EOF
