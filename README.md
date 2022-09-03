@@ -30,7 +30,9 @@ If you want to share network/WiFi connections or other services from the target 
 
 * Any modern Linux OS that supports dracut iSCSI.
 
-  * Tested on: Debian, Fedora, Fedora Silverblue and Arch Linux
+  * Tested on: Debian 11, Fedora 36, Fedora Silverblue 36 and Arch Linux 2022.06.01.
+
+  * Pending fixes: Ubuntu 22.04.
 
 * BIOS/UEFI PXE Boot.
 
@@ -91,7 +93,7 @@ And review:
 Then proceed with the build and installation steps below.
 
 
-### Debian/Ubuntu
+### Debian
 
 ```
 sudo dependencies/debian/build.sh
