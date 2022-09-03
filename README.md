@@ -2,8 +2,7 @@
 
 ## Overview
 
-This simple project builds a preconfigured x86_64 OpenWrt ramdisk image that serves your Linux kernels via PXE and disk drives via iSCSI, allowing you to boot
-your OS over the network on another computer using Dracut `netroot=iscsi:...`.
+This project adds a preconfigured x86_64 OpenWrt ramdisk image to your boot menu that automatically serves your Linux kernels via PXE and storage via iSCSI, allowing you to PXE boot your regular OS over the network on another computer using Dracut `netroot=iscsi:...`.
 
 For example, you can run your laptop OS on your more powerful desktop while still having access to all your laptop's files and programs.
 
@@ -14,7 +13,7 @@ You can also customize the OpenWrt ramdisk with any additional network configura
 
 ## Usage
 
-* Connect your two computers via Ethernet.
+* Connect your two computers via Ethernet. This can be either a direct connection or through an Ethernet switch already providing DHCP.
 
 * On the computer where this is installed (target), power on and select `OpenWrt iSCSI Target` from the boot menu.
 
@@ -22,7 +21,7 @@ You can also customize the OpenWrt ramdisk with any additional network configura
 
 * The target OS should now be running on the initiator.
 
-If you want to share network/WiFi connections from the target to the initiator:
+If you want to share network/WiFi connections or other services from the target to the initiator:
 
 * Connect to <http://192.168.200.1> (or the DHCP assigned IP) to access the OpenWrt Admin UI and configure network routing / WiFi, etc.
 
@@ -240,9 +239,15 @@ On the initiator host (the one to run the OS on):
 
 Typical Linux distributions use a simple boot loader (e.g. GRUB) to load the Linux Kernel and an [Initial ramdisk](https://en.wikipedia.org/wiki/Initial_ramdisk) mini root file system. The purpose of this root filesystem is to do everything necessary to prepare the storage block devices and mount the real root filesystem. This provides the OS with great flexibility about how the root filesystem is stored, for example on different types of network storage, logical volumes, RAID arrays, encrypted filesystems etc. All the configuration and complexity is handled by software in the Initial Ramdisk; all the kernel needs is a final mounted directory it can chroot, and continue the init boot sequence.
 
-Here we add the existing Dracut iSCSI initiator module to the OS's initramfs, which is designed for booting systems installed to remote iSCSI block devices. It stays deactivated and out of the way unless the `netroot:iscsi:...` kernel cmdline arguments are supplied. When activated, the disk's block devices show up on the system just as if they were locally attached. Modern Linux distributions use UUID-based partition identification in `/etc/fstab`, which makes mounting work deterministically regardless of the names of the underlying block devices (e.g. `/dev/sda`, `/dev/sdb` ordering can change based on the order drives or USB keys are inserted). In practice, this means you can do upgrades, kernel updates, bootloader changes, etc. as if you were doing them on the original computer. On modern systems, you should get full 1GB/s transfer speed and relatively low IOP latency. As modern Linux distributions are mostly plug and play, there should be little issue with your OS seeing a completely different set of hardware.
+Here we add the existing Dracut iSCSI initiator module to the OS's initramfs, which is designed for booting systems installed to remote iSCSI block devices. It stays deactivated and out of the way unless the `netroot:iscsi:...` kernel cmdline arguments are supplied. When activated, the disk's block devices show up on the system just as if they were locally attached. Modern Linux distributions use UUID-based partition identification in `/etc/fstab`, which makes mounting work deterministically regardless of the names of the underlying block devices (e.g. `/dev/sda`, `/dev/sdb` ordering can change based on the order drives or USB keys are inserted). In practice, this means you can do upgrades, kernel updates, bootloader changes, etc. as if you were doing them on the original computer. On modern systems with a 1GbE connection, you should get full 1Gb/s transfer speed and relatively low IOP latency. As modern Linux distributions are mostly plug and play, there should be little issue with your OS seeing a completely different set of hardware.
 
 To share the OS drives, we can't use the original OS itself, as only one system can be reading/writing the devices at a time (otherwise disk corruption would result), so instead we use a stateless ramdisk image built using the OpenWrt ImageBuilder. OpenWrt is a very flexible embedded system platform, specializing in network routing with a large number of packages available. This image has been configured to automatically share the drives with iSCSI and the kernel+initramfs files with PXE after booting. The separate OpenWrt system also means you don't have to reconfigure your OS to do all this sharing, and you can easily customize it further by adding more files and packages.
+
+
+## FAQ
+
+* Q: What about support for Fibre Channel over Ethernet (FCoE)?
+  * A: iPXE and Dracut support FCoE, but tgtd does not, so LIO would need to be included in OpenWrt to support this. However the benefits (if any) would be marginal and iSCSI is much easier to work with, e.g. ["FCoE vs iSCSI?"](https://arstechnica.com/civis/viewtopic.php?t=1245917).
 
 
 ## Developing
