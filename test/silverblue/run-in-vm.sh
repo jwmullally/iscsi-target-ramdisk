@@ -9,6 +9,7 @@ podman cp openwrt-iscsi-target-ramdisk openwrt-iscsi-target-build:/root/openwrt-
 
 toolbox run --container openwrt-iscsi-target-build sh -c 'cd /root/openwrt-iscsi-target-ramdisk && dependencies/fedora/build.sh'
 toolbox run --container openwrt-iscsi-target-build sh -c 'cd /root/openwrt-iscsi-target-ramdisk && make images'
+toolbox run --container openwrt-iscsi-target-build sh -c 'cd /root/openwrt-iscsi-target-ramdisk && dependencies/fedora/build-iso.sh'
 toolbox run --container openwrt-iscsi-target-build sh -c 'cd /root/openwrt-iscsi-target-ramdisk && make iso'
 rm -rf openwrt-iscsi-target-ramdisk
 podman cp openwrt-iscsi-target-build:/root/openwrt-iscsi-target-ramdisk openwrt-iscsi-target-ramdisk 

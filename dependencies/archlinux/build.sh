@@ -14,11 +14,3 @@ pacman --sync --needed --noconfirm \
 	unzip \
 	wget \
 	zlib
-
-
-
-# ISO/USB building
-# Disabled by default as syslinux modifies /boot
-#pacman --sync --needed --noconfirm \
-#	cdrkit \
-#	syslinux

@@ -18,10 +18,7 @@ apt-get install --yes --no-install-recommends \
 	xsltproc \
 	zlib1g-dev
 
-
-# ISO/USB building
+# Extra build dependencies
 apt-get install --yes --no-install-recommends \
 	ca-certificates \
-	curl \
-	genisoimage \
-	syslinux-utils
+	curl

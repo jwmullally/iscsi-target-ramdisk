@@ -19,9 +19,7 @@ dnf install --assumeyes --setopt=install_weak_deps=False \
 	zlib-devel \
 	zlib-static
 
-
+# Extra build dependencies
 dnf install --assumeyes --setopt=install_weak_deps=False \
 	cpio \
-	curl \
-	genisoimage \
-	syslinux
+	curl
