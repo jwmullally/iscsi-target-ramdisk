@@ -88,7 +88,7 @@ goto start
 EOF
 
 	umount -f /mnt || true
-	mount -o ro "$boot_partition" /mnt || return 1
+	mount -o ro "$boot_partition" /mnt || echo "Error: Unable to mount boot partition: $boot_partition"
 
 	entries_found="0"
 	if [ -d "/mnt/$boot_path/loader/entries" ]; then

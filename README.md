@@ -32,6 +32,8 @@ If you want to share network/WiFi connections or other services from the target 
 
   * Tested on: Debian 11, Ubuntu 22.04, Fedora 36, Fedora Silverblue 36 and Arch Linux 2022.06.01.
 
+* Also verified to work with: Windows 10
+
 * BIOS/UEFI PXE Boot.
 
 * Disable SecureBoot (see TODO below).
@@ -149,6 +151,48 @@ mv /boot/initramfs-linux.img /boot/initramfs-backup-linux.img
 mv /boot/initramfs-$(uname -r).img /boot/initramfs-linux.img
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
+
+### Windows 10
+
+(TODO: Improve/script these steps)
+
+Get a working `OpenWrt iSCSI Target` image:
+
+* If you dual boot Windows and Linux and use GRUB etc as your bootloader, follow the appropriate Linux instructions above and you can use the same image for booting Windows. Otherwise, build the ISO on another Linux system and flash to a USB drive, or download one from the releases and customize the settings in `/etc/config` at runtime.
+
+* To help configure the Windows iSCSI Initiator, temporarily boot the ISO on another system connected directly via Ethernet, using the default static IP settings (e.g. 192.168.200.1).
+
+On an existing Windows 10 system:
+
+* Open the `iSCSI Initiator` app (`iscsicpl.exe`) and connect to the target, using the initiator settings from `/etc/config/tgt`:
+
+  * Initiator name: `target` -> `<allow_name>`.
+
+  * iSCSI Initiator Mutual CHAP Secret: `user_out` -> `<password>`.
+
+  * Quick Connect Target: `192.168.200.1`.
+
+  * Connect -> Advanced Options -> Enable CHAP log on: Name, Target secret = `"user_in"` -> `<user>`, `<password>`.
+
+  * Add this connection to the list of Favorite Targets: Enabled.
+
+* Set your network card driver to start during early boot:
+
+  * E.g. Intel 82574L (e1000e) (e1i65x64.sys): `[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\e1i65x64]`: `Start` = `0`
+
+  * Repeat for each `ControlSet001`, `ControlSet002` etc.
+
+* Disable the pagefile. (Without doing this, you may encounter `IRQL_NOT_LESS_OR_EQUAL` STOP codes on network boot).
+
+  * System -> Advanced System Properties -> Performance -> Pagefile: Disabled
+
+PXE booting:
+
+* On the same Windows system, boot the `OpenWrt iSCSI Target` image from USB (or GRUB if installed from Linux).
+
+* On the initiator host, boot using PXE and choose the `iBFT SAN boot` option.
+
+* Windows should now start running.
 
 
 ## Post Installation
@@ -273,6 +317,8 @@ Match OpenWrt structure and conventions as much as possible.
 
 
 ## TODO
+
+* Verify `iBFT SAN Boot` on UEFI targets.
 
 * Debian: Tips for disabling default open-iscsi service by default during normal use to prevent error.
 
