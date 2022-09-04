@@ -30,9 +30,7 @@ If you want to share network/WiFi connections or other services from the target 
 
 * Any modern Linux OS that supports dracut iSCSI.
 
-  * Tested on: Debian 11, Fedora 36, Fedora Silverblue 36 and Arch Linux 2022.06.01.
-
-  * Pending fixes: Ubuntu 22.04.
+  * Tested on: Debian 11, Ubuntu 22.04, Fedora 36, Fedora Silverblue 36 and Arch Linux 2022.06.01.
 
 * BIOS/UEFI PXE Boot.
 
@@ -103,6 +101,17 @@ sudo ./install.sh
 ```
 
 NOTE: This replaces [`initramfs-tools`](https://packages.debian.org/sid/initramfs-tools) with [`dracut`](https://packages.debian.org/sid/dracut) ([README.Debian](https://sources.debian.org/src/dracut/sid/debian/dracut-core.README.Debian/)).
+
+### Ubuntu
+
+```
+sudo dependencies/ubuntu/build.sh
+make images
+sudo dependencies/ubuntu/install.sh
+sudo ./install.sh
+```
+
+NOTE: This replaces [`initramfs-tools`](https://packages.ubuntu.com/kinetic/initramfs-tools) with [`dracut`](https://packages.ubuntu.com/kinetic/dracut) ([README.Debian](https://sources.debian.org/src/dracut/sid/debian/dracut-core.README.Debian/)).
 
 ### Fedora
 
@@ -180,6 +189,8 @@ On the OpenWrt target:
 * Use `tcpdump port 81` to check for incoming PXE related HTTP requests (unfortunately OpenWrt uHTTPd does not support request logging).
 
 * Check the console or `dmesg` output for Ethernet interface corruption warnings (e.g. some `e1000e` models have flaky offloading that needs to be disabled with `ethtool`.)
+
+* To set breakpoints during initrd, change `/etc/config/bootentries` `cmdline_iscsi` to include `rd.shell` or `rd.break=...`. See `dracut.cmdline(7)` for the list of break points.
 
 On the initiator PXE boot menu:
 

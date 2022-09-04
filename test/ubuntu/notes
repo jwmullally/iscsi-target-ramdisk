@@ -1,0 +1,4 @@
+systemctl disable systemd-networkd-wait-online
+systemctl mask systemd-networkd-wait-online
+
+TODO: cloud-init autoinstall

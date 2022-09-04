@@ -6,6 +6,7 @@ HAS_OSTREE="$(test -d /ostree && echo 1 || echo 0)"
 HAS_GRUB1="$(test -f /boot/grub/grub.cfg && echo 1 || echo 0)"
 HAS_GRUB2="$(test -f /boot/grub2/grub.cfg && echo 1 || echo 0)"
 HAS_SYSTEMD="$(test -f /usr/bin/systemctl && echo 1 || echo 0)"
+HAS_NETWORKD="$(systemctl --quiet is-enabled systemd-networkd && echo 1 || echo 0)"
 HAS_NM="$(test -f /usr/bin/nmcli && echo 1 || echo 0)"
 
 uninstall_previous() {
@@ -58,7 +59,10 @@ preserve_kernel_cmdline() {
 }
 
 set_bootif_unmanaged() {
-    if [ "$HAS_NM" = "1" -a "$HAS_SYSTEMD" = "1" ]; then
+    if [ "$HAS_NETWORKD" = "1" ]; then
+        echo "Setting iSCSI BOOTIF as unmanaged in systemd-networkd"
+        install -m 0644 -T src/bootnet-networkd-unmanaged.network /etc/systemd/network/00-bootnet-unmanaged.network
+    elif [ "$HAS_NM" = "1" -a "$HAS_SYSTEMD" = "1" ]; then
         echo "Installing script to set iSCSI BOOTIF as unmanaged in NetworkManager"
         # Post install
         install -m 0644 -T src/bootnet-nm-unmanaged.service /etc/systemd/system/bootnet-nm-unmanaged.service
