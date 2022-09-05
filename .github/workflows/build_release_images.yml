@@ -1,0 +1,35 @@
+name: Build-Release-Images
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+jobs:
+  build-release-images:
+    name: Build and Release Firmware Images
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Update APT
+        run: 'sudo apt-get update'
+      - name: Install dependencies
+        run: 'sudo dependencies/debian/build.sh'
+      - name: Build firmware images
+        run: 'make images CURL_OPTS="-s"'
+      - name: Install ISO dependencies
+        run: 'sudo dependencies/debian/build-iso.sh'
+      - name: Build ISO
+        run: 'make iso'
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            Automated release. Please see the project README.md for more information.
+
+            [Build logs.](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          prerelease: True
+          files: |
+            build/images/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
