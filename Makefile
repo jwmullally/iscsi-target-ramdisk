@@ -69,6 +69,15 @@ iso:
 		$(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME)-kernel.bin \
 		$(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME)-initrd.img \
 		"consoleblank=600"
+
+efi:
+	objcopy \
+		--add-section .osrel=src/os-release --change-section-vma .osrel=0x20000 \
+		--add-section .cmdline=src/cmdline.txt --change-section-vma .cmdline=0x30000 \
+		--add-section .linux=build/images/openwrt-iscsi-target-kernel.bin --change-section-vma .linux=0x2000000 \
+		--add-section .initrd=build/images/openwrt-iscsi-target-initrd.img --change-section-vma .initrd=0x3000000 \
+		/usr/lib/systemd/boot/efi/linuxx64.efi.stub \
+		build/images/openwrt-iscsi-target.efi
 	
 
 keys:

@@ -19,6 +19,8 @@ You can also customize the OpenWrt ramdisk with any additional network configura
 
 * Power on the other computer (initiator), select the BIOS's built-in PXE boot.
 
+  * Both UEFI and Legacy/CSM/BIOS boot are supported, depending on how your target OS is configured.
+
 * The target OS should now be running on the initiator.
 
 If you want to share network/WiFi connections or other services from the target to the initiator:
@@ -154,15 +156,23 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ### Windows 10
 
-(TODO: Improve/script these steps)
+Install a working `OpenWrt iSCSI Target` image:
 
-Get a working `OpenWrt iSCSI Target` image:
+* Windows & Linux Dual Boot using GRUB: Follow the appropriate Linux instructions above and you can use the same image for PXE booting Windows.
 
-* If you dual boot Windows and Linux and use GRUB etc as your bootloader, follow the appropriate Linux instructions above and you can use the same image for booting Windows. Otherwise, build the ISO on another Linux system and flash to a USB drive, or download one from the releases and customize the settings in `/etc/config` at runtime.
+* Windows & UEFI: Build and install the `openwrt-iscsi-target.efi` on another system or VM (or download from the releases) and copy to `EFI/openwrt-iscsi-target/`. This file can be booted from your UEFI BIOS menu.
 
-* To help configure the Windows iSCSI Initiator, temporarily boot the ISO on another system connected directly via Ethernet, using the default static IP settings (e.g. 192.168.200.1).
+  * To access the EFI partition from inside Windows, run the following in an Administrator Command Prompt: `mountvol X: /s`.
 
-On an existing Windows 10 system:
+  * Select the file from your BIOS UEFI file browser. To add it to your boot options from Linux, do `efibootmgr --create --disk /dev/nvme0n1 --part 2 --label 'openwrt-iscsi-target' --loader '\EFI\openwrt-iscsi-target\openwrt-iscsi-target.efi'`
+
+* Windows & BIOS/Legacy/CSM boot: Build the ISO on another Linux system and flash to a USB drive, or download one from the releases and customize the settings in `/etc/config` at runtime.
+
+Preparing an existing Windows 10 system:
+
+* Temporarily boot the ISO on another system connected directly via Ethernet, using the default static IP settings (e.g. 192.168.200.1). Ensure the iSCSI Target Service is running: `/etc/init.d/tgt show`. This will be used to help verify all the iSCSI settings are correct in the `iSCSI Initiator` windows UI app.
+
+* Visit <http://192.168.200.1:81/cgi-bin/get-menu-ipxe> to enable iSCSI access through the firewall for your IP.
 
 * Open the `iSCSI Initiator` app (`iscsicpl.exe`) and connect to the target, using the initiator settings from `/etc/config/tgt`:
 
@@ -174,9 +184,13 @@ On an existing Windows 10 system:
 
   * Connect -> Advanced Options -> Enable CHAP log on: Name, Target secret = `"user_in"` -> `<user>`, `<password>`.
 
+  * Perform mutual authentication: Enabled.
+
   * Add this connection to the list of Favorite Targets: Enabled.
 
-* Set your network card driver to start during early boot:
+* Install the driver for the network card used by the initiator. (TODO: How?)
+
+* Set your network card driver to start during early boot. (Seems not always necessary, first try PXE booting without this).
 
   * E.g. Intel 82574L (e1000e) (e1i65x64.sys): `[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\e1i65x64]`: `Start` = `0`
 
@@ -184,11 +198,11 @@ On an existing Windows 10 system:
 
 * Disable the pagefile. (Without doing this, you may encounter `IRQL_NOT_LESS_OR_EQUAL` STOP codes on network boot).
 
-  * System -> Advanced System Properties -> Performance -> Pagefile: Disabled
+  * System -> Advanced System Properties -> Performance -> Pagefile: Disabled.
 
 PXE booting:
 
-* On the same Windows system, boot the `OpenWrt iSCSI Target` image from USB (or GRUB if installed from Linux).
+* On the same Windows system, boot the `OpenWrt iSCSI Target` image from UEFI, GRUB or USB.
 
 * On the initiator host, boot using PXE and choose the `iBFT SAN boot` option. (Verified to work with BIOS boot, may not work yet with UEFI).
 
@@ -317,8 +331,6 @@ Match OpenWrt structure and conventions as much as possible.
 
 
 ## TODO
-
-* Verify `iBFT SAN Boot` on UEFI targets.
 
 * Debian: Tips for disabling default open-iscsi service by default during normal use to prevent error.
 

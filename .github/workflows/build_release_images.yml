@@ -21,6 +21,8 @@ jobs:
         run: 'sudo dependencies/debian/build-iso.sh'
       - name: Build ISO
         run: 'make iso'
+      - name: Build EFI
+        run: 'make efi'
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
