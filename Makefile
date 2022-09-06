@@ -1,7 +1,7 @@
 ALL_CURL_OPTS := $(CURL_OPTS) -L --fail --create-dirs
 
 #VERSION := 22.03-SNAPSHOT
-VERSION := 22.03.0-rc6
+VERSION := 22.03.0
 BOARD := x86
 SUBTARGET := 64
 BUILDER := openwrt-imagebuilder-$(VERSION)-$(BOARD)-$(SUBTARGET).Linux-x86_64
