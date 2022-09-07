@@ -204,7 +204,7 @@ PXE booting:
 
 * On the same Windows system, boot the `OpenWrt iSCSI Target` image from UEFI, GRUB or USB.
 
-* On the initiator host, boot using PXE and choose the `iBFT SAN boot` option. (Verified to work with BIOS boot, may not work yet with UEFI).
+* On the initiator host, boot using PXE (BIOS/CSM/Legacy or UEFI depending on your Windows installation) and choose the `iBFT SAN boot` option.
 
 * Windows should now start running.
 
