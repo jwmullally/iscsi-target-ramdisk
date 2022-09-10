@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project adds a preconfigured x86_64 OpenWrt ramdisk image to your boot menu that automatically serves your Linux kernels via PXE and storage via iSCSI, allowing you to PXE boot your regular OS over the network on another computer using Dracut `netroot=iscsi:...`.
+This project adds a preconfigured x86_64 OpenWrt ramdisk image to your boot menu that automatically serves your Linux kernels via PXE and storage via iSCSI, allowing you to PXE boot your regular OS over the network on another computer using Dracut `netroot=iscsi:...`. Windows iSCSI SAN boot is also supported.
 
 For example, you can run your laptop OS on your more powerful desktop while still having access to all your laptop's files and programs.
 
@@ -90,7 +90,7 @@ And review:
 
 * [`src/grub-entry.sh`](src/grub-entry.sh)
 
-* [`Makefile`](Makefile) (e.g. to adjust package selection)
+* [`Makefile`](Makefile) (e.g. to adjust the [package selection](https://openwrt.org/packages/start) to support more network cards)
 
 Then proceed with the build and installation steps below.
 
@@ -156,25 +156,45 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ### Windows 10
 
-Install a working `OpenWrt iSCSI Target` image:
+Configure the project. For this, only a subset of the above settings are needed:
+
+* [`src/rootfs/etc/uci-defaults/85-custom-tgt`](src/rootfs/etc/uci-defaults/85-custom-tgt)
+
+  * Update the list of of block devices to share as iSCSI LUNs.
+
+Build and install a working `OpenWrt iSCSI Target` image.
 
 * Windows & Linux Dual Boot using GRUB: Follow the appropriate Linux instructions above and you can use the same image for PXE booting Windows.
 
-* Windows & UEFI: Build and install the `openwrt-iscsi-target.efi` on another system or VM (or download from the releases) and copy to `EFI/openwrt-iscsi-target/`. This file can be booted from your UEFI BIOS menu.
+* Windows & UEFI: Build an EFI image using `make efi` on another Linux system, Live USB or VM (or download the `.efi` from the releases), copy `build/images/openwrt-iscsi-target.efi` to `EFI/openwrt-iscsi-target/` and add it to your UEFI boot menu.
 
   * To access the EFI partition from inside Windows, run the following in an Administrator Command Prompt: `mountvol X: /s`.
 
-  * Select the file from your BIOS UEFI file browser. To add it to your boot options from Linux, do `efibootmgr --create --disk /dev/nvme0n1 --part 2 --label 'openwrt-iscsi-target' --loader '\EFI\openwrt-iscsi-target\openwrt-iscsi-target.efi'`
+  * To add it to your BIOS boot options, select the file from your BIOS UEFI file browser if it has one.
+  
+  * If your BIOS doesn't support selecting EFI files for boot, you can add the option to your EFI boot partition from Linux with something like `efibootmgr --create --disk /dev/nvme0n1 --part 2 --label 'openwrt-iscsi-target' --loader '\EFI\openwrt-iscsi-target\openwrt-iscsi-target.efi'`
+
+  * This file can be booted from your UEFI BIOS menu.
 
 * Windows & BIOS/Legacy/CSM boot: Build the ISO on another Linux system and flash to a USB drive, or download one from the releases and customize the settings in `/etc/config` at runtime.
 
 Preparing an existing Windows 10 system:
 
-* Temporarily boot the ISO on another system connected directly via Ethernet, using the default static IP settings (e.g. 192.168.200.1). Ensure the iSCSI Target Service is running: `/etc/init.d/tgt show`. This will be used to help verify all the iSCSI settings are correct in the `iSCSI Initiator` windows UI app.
+* Temporarily boot the image/ISO/USB on another system connected directly via Ethernet.
 
-* Visit <http://192.168.200.1:81/cgi-bin/get-menu-ipxe> to enable iSCSI access through the firewall for your IP.
+  * It should start using the default static IP settings `192.168.200.1`.
+
+  * This will be used to help verify all the iSCSI settings are correct in the `iSCSI Initiator` Windows UI app.
+
+  * Ensure the iSCSI Target Service is running with `/etc/init.d/tgt show`.
+
+  * Visit <http://192.168.200.1:81/cgi-bin/get-menu-ipxe> to enable iSCSI access through the firewall for your IP.
 
 * Open the `iSCSI Initiator` app (`iscsicpl.exe`) and connect to the target, using the initiator settings from `/etc/config/tgt`:
+
+  * Warning: This will overwrite your existing Windows iSCSI Initiator Name and Reverse CHAP Secret. To preserve them, set them first in `/etc/config/tgt` to match your existing Windows settings.
+
+  * (Alternatively, copy + paste the commands from <http://192.168.200.1:81/cgi-bin/iscsi-windows.ps1> into an Administrator Powershell).
 
   * Initiator name: `target` -> `<allow_name>`.
 
@@ -188,7 +208,11 @@ Preparing an existing Windows 10 system:
 
   * Add this connection to the list of Favorite Targets: Enabled.
 
-* Install the driver for the network card used by the initiator. (TODO: How?)
+* Install the driver for the network card used by the initiator. Complicated, but only needs to be done once.
+
+  * Attach the target storage directly to the initiator, boot and let Windows install all drivers including the network drivers.
+
+  * Alternatively, boot `openwrt-iscsi-initiator` on the target and a Linux Live CD on the initiator (e.g. Fedora or Ubuntu). Install `virt-manager`, attach the iSCSI drive using the script from <http://192.168.200.1:81/cgi-bin/iscsistart.sh>, create a Win10 VM with the existing `/dev/sd*` iSCSI drive, add the network card as a "PCI Host Device", then boot Windows once to install the network driver.
 
 * Set your network card driver to start during early boot. (Seems not always necessary, first try PXE booting without this).
 
@@ -272,7 +296,7 @@ On the target host (containing the OS to remote boot):
   * The contents of `cmdline_iscsi` are appended to the cmdline, which include the `netroot:iscsi:...` paramaters.
 * `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets.
   * Configuration: [`/etc/uci-defaults/85-custom-tgt`](src/rootfs/etc/uci-defaults/85-custom-tgt).
-* ['/etc/init.d/network'] starts, which sets the first LAN interface to DHCP by default.
+* `/etc/init.d/network` starts, which sets the first LAN interface to DHCP by default.
   * Configuration: [`/etc/uci-defaults/80-custom-network`](src/rootfs/etc/uci-defaults/80-custom-network)
 * `/etc/init.d/dnsmasq` starts which provides PXE DHCP Proxy boot (to work alongside existing DHCP servers) and serves `/srv/pxe` via TFTP. Regular DHCP allocations are disabled by default.
   * Configuration: [`/etc/uci-defaults/90-custom-dhcp`](src/rootfs/etc/uci-defaults/90-custom-dhcp).
@@ -347,6 +371,8 @@ Match OpenWrt structure and conventions as much as possible.
 * Set custom DHCP user class to always fetch newest iPXE.
 
 * [dracut iscsi](https://github.com/dracutdevs/dracut/blob/master/modules.d/95iscsi/iscsiroot.sh): Re-add support for `rd.iscsi.param` when `rd.iscsi.firmware` is used (for setting `node.session.timeo.replacement_timeout=0` for iBFT).
+
+* Make procd scripts non-blocking.
 
 
 ## Reference
