@@ -1,7 +1,22 @@
 #!/bin/sh /etc/rc.common
 
-START=90
+START=99
 USE_PROCD=1
+
+
+wait_for_lan_ipaddr() {
+	. /lib/functions/network.sh
+	echo "Waiting for LAN IP address..."
+	while true; do
+		network_flush_cache
+		network_get_ipaddr LAN_IPADDR lan
+		if [ -n "${LAN_IPADDR}" ]; then
+			echo "LAN IP address found."
+			return 0
+		fi
+		sleep 5
+	done
+}
 
 validate_bootentries_section() {
 	uci_load_validate bootentries bootentries "$1" "$2" \
@@ -22,20 +37,13 @@ bootentries_config() {
 		return 1
 	}
 
-	sleep 10	# Wait for DHCP allocation. TODO: Replace with service retry
-	. /lib/functions/network.sh
-	network_flush_cache
-	network_get_ipaddr lan_addr "lan"
-	if [ -z "${lan_addr}" ]; then
-		echo "LAN IP address not yet set, not generating /srv/pxe/ configuration"
-		return 1
-	fi
+	wait_for_lan_ipaddr
 
 	cat > /srv/pxe/tftp/ipxe/entry.ipxe <<EOF
 #!ipxe
   
 login
-set target-server-ip $lan_addr
+set target-server-ip $LAN_IPADDR
 set boot-url http://\${username:uristring}:\${password:uristring}@\${target-server-ip}:81/
 chain \${boot-url}cgi-bin/get-menu-ipxe
 EOF

@@ -3,13 +3,27 @@
 START=95
 USE_PROCD=1
 
-start_service() {
+
+wait_for_lan_ipaddr() {
 	. /lib/functions/network.sh
-	sleep 15
-	network_flush_cache
-	network_get_ipaddr lan_addr "lan"
-	if [ -n "${lan_addr}" ]; then
-		echo -e "\nLAN IP address [DHCP]: ${lan_addr}" > /dev/console
+	echo "Waiting for LAN IP address..."
+	for loop_idx in $(seq 1 5); do
+		network_flush_cache
+		network_get_ipaddr LAN_IPADDR lan
+		if [ -n "${LAN_IPADDR}" ]; then
+			echo "LAN IP address found."
+			return 0
+		fi
+		sleep 5
+	done
+	echo "LAN IP address timeout."
+	return 1
+}
+
+start_service() {
+
+	if wait_for_lan_ipaddr; then
+		echo -e "\nLAN IP address [DHCP]: ${LAN_IPADDR}" > /dev/console
 		echo "LAN DHCP configuration complete, not falling back to static IP."
 		return 0
 	fi
@@ -27,7 +41,6 @@ start_service() {
 
 	/etc/init.d/network restart
 	/etc/init.d/dnsmasq restart
-	/etc/init.d/bootentries restart
 
 	echo -e "\nLAN IP address [static]: $(uci get network.lan.ipaddr)" > /dev/console
 }
