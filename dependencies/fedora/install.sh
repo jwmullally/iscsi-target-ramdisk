@@ -2,6 +2,6 @@
 set -ex
 
 # Dracut iSCSI target support
-dnf install --assumeyes \
+dnf install $PKGMGR_OPTS \
 	dracut-network \
 	iscsi-initiator-utils

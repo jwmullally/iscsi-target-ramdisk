@@ -33,8 +33,8 @@ EOF
 
 # Find parent disk from partition UUID
 uci set tgt.1_1=lun
-#uci set tgt.1_1.device="/dev/vda"
-uci set tgt.1_1.device="$(lsblk -npdo pkname $(blkid --uuid 'b7b071ef-8c7f-480c-b8d5-a02fdae46f90'))"
+uci set tgt.1_1.device="/dev/vda"
+#uci set tgt.1_1.device="$(lsblk -npdo pkname $(blkid --uuid 'b7b071ef-8c7f-480c-b8d5-a02fdae46f90'))"
 uci set tgt.1_1.type='disk'
 uci set tgt.1_1.bstype='aio'
 

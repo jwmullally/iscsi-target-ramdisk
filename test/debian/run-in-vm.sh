@@ -5,9 +5,9 @@ set -ex
 
 cd openwrt-iscsi-target-ramdisk
 
-dependencies/debian/build.sh
+PKGMGR_OPTS="--yes" dependencies/debian/build.sh
 make images
-dependencies/debian/build-iso.sh
+PKGMGR_OPTS="--yes" dependencies/debian/build-iso.sh
 make iso
-dependencies/debian/install.sh
+PKGMGR_OPTS="--yes" dependencies/debian/install.sh
 ./install.sh

@@ -5,9 +5,9 @@ set -ex
 
 cd openwrt-iscsi-target-ramdisk
 
-dependencies/fedora/build.sh
+PKGMGR_OPTS="--assumeyes" dependencies/fedora/build.sh
 make images
-dependencies/fedora/build-iso.sh
+PKGMGR_OPTS="--assumeyes" dependencies/fedora/build-iso.sh
 make iso
-dependencies/fedora/install.sh
+PKGMGR_OPTS="--assumeyes" dependencies/fedora/install.sh
 ./install.sh

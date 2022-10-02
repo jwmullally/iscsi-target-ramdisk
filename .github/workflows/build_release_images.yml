@@ -14,11 +14,11 @@ jobs:
       - name: Update APT
         run: 'sudo apt-get update'
       - name: Install dependencies
-        run: 'sudo dependencies/debian/build.sh'
+        run: 'sudo PKGMGR_OPTS="--yes" dependencies/debian/build.sh'
       - name: Build firmware images
         run: 'make images CURL_OPTS="-s"'
       - name: Install ISO dependencies
-        run: 'sudo dependencies/debian/build-iso.sh'
+        run: 'sudo PKGMGR_OPTS="--yes" dependencies/debian/build-iso.sh'
       - name: Build ISO
         run: 'make iso'
       - name: Build EFI

@@ -2,10 +2,10 @@
 set -ex
 
 # Dracut iSCSI target support
-pacman --sync --needed --noconfirm \
+pacman --sync --needed $PKGMGR_OPTS \
 	dracut \
 	open-iscsi
 
-pacman --remove --noconfirm \
+pacman --remove $PKGMGR_OPTS \
 	mkinitcpio \
 	|| echo "No package to remove"

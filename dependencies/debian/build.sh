@@ -2,7 +2,7 @@
 set -ex
 
 # https://openwrt.org/docs/guide-user/additional-software/imagebuilder#debianubuntu
-apt-get install --yes --no-install-recommends \
+apt-get install $PKGMGR_OPTS --no-install-recommends \
 	build-essential \
 	file \
 	gawk \
@@ -19,6 +19,6 @@ apt-get install --yes --no-install-recommends \
 	zlib1g-dev
 
 # Extra build dependencies
-apt-get install --yes --no-install-recommends \
+apt-get install $PKGMGR_OPTS --no-install-recommends \
 	ca-certificates \
 	curl

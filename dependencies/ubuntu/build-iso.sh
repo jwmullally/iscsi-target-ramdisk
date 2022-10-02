@@ -1,6 +1,6 @@
 #!/bin/sh
 set -ex
 
-apt-get install --yes --no-install-recommends \
+apt-get install $PKGMGR_OPTS --no-install-recommends \
 	genisoimage \
 	syslinux-utils

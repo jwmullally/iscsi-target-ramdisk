@@ -2,7 +2,7 @@
 set -ex
 
 # https://openwrt.org/docs/guide-user/additional-software/imagebuilder#centosfedora
-dnf install --assumeyes --setopt=install_weak_deps=False \
+dnf install $PKGMGR_OPTS --setopt=install_weak_deps=False \
 	@c-development \
 	@development-libs \
 	@development-tools \
@@ -20,6 +20,6 @@ dnf install --assumeyes --setopt=install_weak_deps=False \
 	zlib-static
 
 # Extra build dependencies
-dnf install --assumeyes --setopt=install_weak_deps=False \
+dnf install $PKGMGR_OPTS --setopt=install_weak_deps=False \
 	cpio \
 	curl

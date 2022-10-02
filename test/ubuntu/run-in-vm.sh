@@ -5,9 +5,9 @@ set -ex
 
 cd openwrt-iscsi-target-ramdisk
 
-dependencies/ubuntu/build.sh
+PKGMGR_OPTS="--yes" dependencies/ubuntu/build.sh
 make images
-dependencies/ubuntu/build-iso.sh
+PKGMGR_OPTS="--yes" dependencies/ubuntu/build-iso.sh
 make iso
-dependencies/ubuntu/install.sh
+PKGMGR_OPTS="--yes" dependencies/ubuntu/install.sh
 ./install.sh

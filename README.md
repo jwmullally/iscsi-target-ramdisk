@@ -162,7 +162,7 @@ Configure the project. For this, only a subset of the above settings are needed:
 
   * Update the list of of block devices to share as iSCSI LUNs.
 
-Build and install a working `OpenWrt iSCSI Target` image.
+Build and install a working `OpenWrt iSCSI Target` image, depending on your setup:
 
 * Windows & Linux Dual Boot using GRUB: Follow the appropriate Linux instructions above and you can use the same image for PXE booting Windows.
 
@@ -188,7 +188,7 @@ Preparing an existing Windows 10 system:
 
   * Ensure the iSCSI Target Service is running with `/etc/init.d/tgt show`.
 
-  * Visit <http://192.168.200.1:81/cgi-bin/get-menu-ipxe> to enable iSCSI access through the firewall for your IP.
+  * Visit <http://192.168.200.1:81/cgi-bin/get-menu-ipxe> to enable iSCSI access through the firewall for your IP, or disable the iSCSI firewall rule with `uci set firewall.block_iscsi.enabled=0; /etc/init.d/firewall restart`.
 
 * Open the `iSCSI Initiator` app (`iscsicpl.exe`) and connect to the target, using the initiator settings from `/etc/config/tgt`:
 
@@ -208,15 +208,19 @@ Preparing an existing Windows 10 system:
 
   * Add this connection to the list of Favorite Targets: Enabled.
 
-* Install the driver for the network card used by the initiator. Complicated, but only needs to be done once.
+* Install the driver for the network card used by the initiator. This is complicated as it requires some other way of booting the target OS on the initiator, but only needs to be done once. This can be done in one of the following ways:
 
-  * Attach the target storage directly to the initiator, boot and let Windows install all drivers including the network drivers.
+  * Attach the target storage directly to the initiator.
 
-  * Alternatively, boot `openwrt-iscsi-initiator` on the target and a Linux Live CD on the initiator (e.g. Fedora or Ubuntu). Install `virt-manager`, attach the iSCSI drive using the script from <http://192.168.200.1:81/cgi-bin/iscsistart.sh>, create a Win10 VM with the existing `/dev/sd*` iSCSI drive, add the network card as a "PCI Host Device", then boot Windows once to install the network driver.
+  * Boot the [iSCSI target as a USB Mass Storage device](https://github.com/jwmullally/openwrt-rpi4-iscsi-usb-otg).
+
+  * Boot `openwrt-iscsi-initiator` on the target and a Linux Live CD on the initiator (e.g. Fedora or Ubuntu). Install `libvirtd` and `virt-manager`, attach the iSCSI drive using the script from <http://192.168.200.1:81/cgi-bin/iscsistart.sh>, create a Win10 VM with the existing `/dev/sd*` iSCSI drive, add the network card as a "PCI Host Device", then boot Windows in the VM once to install the network driver. This might not work if the hardware is too dissimilar and other system drivers are needed.
 
 * Set your network card driver to start during early boot. (Seems not always necessary, first try PXE booting without this).
 
-  * E.g. Intel 82574L (e1000e) (e1i65x64.sys): `[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\e1i65x64]`: `Start` = `0`
+  * E.g. Device Manager -> Intel 82574L -> Driver Details: `e1i65x64.sys`: 
+
+  * Regedit: `[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\e1i65x64]`: `Start` = `0`
 
   * Repeat for each `ControlSet001`, `ControlSet002` etc.
 

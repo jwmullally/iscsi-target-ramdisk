@@ -5,11 +5,11 @@ set -ex
 
 cd openwrt-iscsi-target-ramdisk
 
-dependencies/archlinux/build.sh
+PKGMGR_OPTS="--noconfirm" dependencies/archlinux/build.sh
 make images
-#dependencies/archlinux/build-iso.sh
+#PKGMGR_OPTS="--noconfirm" dependencies/archlinux/build-iso.sh
 #make iso
-dependencies/archlinux/install.sh
+PKGMGR_OPTS="--noconfirm" dependencies/archlinux/install.sh
 ./install.sh
 
 mv /boot/initramfs-$(uname -r).img /boot/initramfs-linux.img
