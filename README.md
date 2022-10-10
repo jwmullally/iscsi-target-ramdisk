@@ -27,6 +27,8 @@ If you want to share network/WiFi connections or other services from the target 
 
 * Connect to <http://192.168.200.1> (or the DHCP assigned IP) to access the OpenWrt Admin UI and configure network routing / WiFi, etc.
 
+If the initiator computer doesn't have network ports, you can also boot via an [iSCSI-to-USB bridge like this](https://github.com/jwmullally/openwrt-rpi4-iscsi-to-usb-bridge).
+
 
 ## Requirements
 
@@ -212,7 +214,7 @@ Preparing an existing Windows 10 system:
 
   * Attach the target storage directly to the initiator.
 
-  * Boot the [iSCSI target as a USB Mass Storage device](https://github.com/jwmullally/openwrt-rpi4-iscsi-usb-otg).
+  * Boot the [iSCSI target as a USB Mass Storage device](https://github.com/jwmullally/openwrt-rpi4-iscsi-to-usb-bridge).
 
   * Boot `openwrt-iscsi-initiator` on the target and a Linux Live CD on the initiator (e.g. Fedora or Ubuntu). Install `libvirtd` and `virt-manager`, attach the iSCSI drive using the script from <http://192.168.200.1:81/cgi-bin/iscsistart.sh>, create a Win10 VM with the existing `/dev/sd*` iSCSI drive, add the network card as a "PCI Host Device", then boot Windows in the VM once to install the network driver. This might not work if the hardware is too dissimilar and other system drivers are needed.
 
