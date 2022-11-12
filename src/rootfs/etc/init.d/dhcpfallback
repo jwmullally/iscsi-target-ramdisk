@@ -23,8 +23,8 @@ wait_for_lan_ipaddr() {
 start_service() {
 
 	if wait_for_lan_ipaddr; then
-		echo -e "\nLAN IP address [DHCP]: ${LAN_IPADDR}" > /dev/console
-		echo "LAN DHCP configuration complete, not falling back to static IP."
+		echo -e "\nLAN IP address [$(uci get network.lan.proto)]: ${LAN_IPADDR}\n" > /dev/console
+		echo "LAN IP configuration complete, not falling back to static IP."
 		return 0
 	fi
 
@@ -35,12 +35,34 @@ start_service() {
 	uci commit network
 
 	uci set dhcp.lan.proxy='0'
-	uci delete dhcp.@dnsmasq[0].pxe_prompt
-	uci delete dhcp.@dnsmasq[0].pxe_service
+	uci rename dhcp.@dnsmasq[0].pxe_prompt=_pxe_prompt
+	uci rename dhcp.@dnsmasq[0].pxe_service=_pxe_service
 	uci commit dhcp
 
 	/etc/init.d/network restart
 	/etc/init.d/dnsmasq restart
 
-	echo -e "\nLAN IP address [static]: $(uci get network.lan.ipaddr)" > /dev/console
+	echo -e "\nLAN IP address [static]: $(uci get network.lan.ipaddr)\n" > /dev/console
+}
+
+stop_service() {
+
+	if [ "$(uci get network.lan.proto)" = 'dhcp' ]; then
+		return 0
+	fi
+
+	echo "Removing LAN static IP and restoring DHCP configuration..."
+
+	uci set network.lan.proto='dhcp'
+	uci delete network.lan.ipaddr
+	uci commit network
+
+	uci set dhcp.lan.proxy='1'
+	uci rename dhcp.@dnsmasq[0]._pxe_prompt=pxe_prompt
+	uci rename dhcp.@dnsmasq[0]._pxe_service=pxe_service
+	uci commit dhcp
+
+	/etc/init.d/network restart
+	/etc/init.d/dnsmasq restart
+
 }
