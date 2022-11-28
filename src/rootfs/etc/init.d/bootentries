@@ -51,19 +51,23 @@ EOF
 	rm -rf /srv/pxe/bootentries
 	mkdir /srv/pxe/bootentries
 
-	cat > /tmp/partial.ipxe.header.tmp <<EOF
+	IPXE_HEADER="/tmp/partial.ipxe.header.tmp"
+	IPXE_MENU="/tmp/partial.ipxe.menu.tmp"
+	IPXE_CONTENTS="/tmp/partial.ipxe.contents.tmp"
+
+	cat > "$IPXE_HEADER" <<EOF
 #!ipxe
 
 EOF
 
-	cat > /tmp/partial.ipxe.menu.tmp <<EOF
+	cat > "$IPXE_MENU" <<EOF
 
 :start
 menu $menu_title
 item --gap --             ------------------------- Operating systems ------------------------------
 EOF
 
-	cat > /tmp/partial.ipxe.contents.tmp <<EOF
+	cat > "$IPXE_CONTENTS" <<EOF
 item --gap --             ------------------------- Advanced options -------------------------------
 item config               Configure settings
 item shell                Drop to iPXE shell
@@ -118,15 +122,15 @@ EOF
 				cp "/mnt/$boot_path/$INITRD_PATH" "/srv/pxe/$INITRD_IMG"
 				chmod 644 "/srv/pxe/$KERNEL_IMG"
 				chmod 644 "/srv/pxe/$INITRD_IMG"
-				echo -e "item $LABEL $TITLE" >> /tmp/partial.ipxe.menu.tmp
+				echo -e "item $LABEL $TITLE" >> "$IPXE_MENU"
 		
-				echo -e "" >> /tmp/partial.ipxe.contents.tmp
-				echo -e ":$LABEL" >> /tmp/partial.ipxe.contents.tmp
-				echo -e "kernel \${boot-url}$KERNEL_IMG" >> /tmp/partial.ipxe.contents.tmp
-				echo -e "initrd \${boot-url}$INITRD_IMG" >> /tmp/partial.ipxe.contents.tmp
-				echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $OPTIONS $cmdline_iscsi" >> /tmp/partial.ipxe.contents.tmp
-				echo -e "boot || goto failed">> /tmp/partial.ipxe.contents.tmp
-				echo -e "goto start" >> /tmp/partial.ipxe.contents.tmp
+				echo -e "" >> "$IPXE_CONTENTS"
+				echo -e ":$LABEL" >> "$IPXE_CONTENTS"
+				echo -e "kernel \${boot-url}$KERNEL_IMG" >> "$IPXE_CONTENTS"
+				echo -e "initrd \${boot-url}$INITRD_IMG" >> "$IPXE_CONTENTS"
+				echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $OPTIONS $cmdline_iscsi" >> "$IPXE_CONTENTS"
+				echo -e "boot || goto failed">> "$IPXE_CONTENTS"
+				echo -e "goto start" >> "$IPXE_CONTENTS"
 				entries_found="$((entries_found+1))"
 			fi
 		done
@@ -151,26 +155,26 @@ EOF
 			cp "/mnt/$boot_path/$INITRD_FILE" "/srv/pxe/$INITRD_IMG"
 			chmod 644 "/srv/pxe/$KERNEL_IMG"
 			chmod 644 "/srv/pxe/$INITRD_IMG"
-			echo -e "item $LABEL $LABEL" >> /tmp/partial.ipxe.menu.tmp
+			echo -e "item $LABEL $LABEL" >> "$IPXE_MENU"
 	
-			echo -e "" >> /tmp/partial.ipxe.contents.tmp
-			echo -e ":$LABEL" >> /tmp/partial.ipxe.contents.tmp
-			echo -e "kernel \${boot-url}$KERNEL_IMG" >> /tmp/partial.ipxe.contents.tmp
-			echo -e "initrd \${boot-url}$INITRD_IMG" >> /tmp/partial.ipxe.contents.tmp
-			echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $cmdline_default $cmdline_iscsi" >> /tmp/partial.ipxe.contents.tmp
-			echo -e "boot || goto failed">> /tmp/partial.ipxe.contents.tmp
-			echo -e "goto start" >> /tmp/partial.ipxe.contents.tmp
+			echo -e "" >> "$IPXE_CONTENTS"
+			echo -e ":$LABEL" >> "$IPXE_CONTENTS"
+			echo -e "kernel \${boot-url}$KERNEL_IMG" >> "$IPXE_CONTENTS"
+			echo -e "initrd \${boot-url}$INITRD_IMG" >> "$IPXE_CONTENTS"
+			echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $cmdline_default $cmdline_iscsi" >> "$IPXE_CONTENTS"
+			echo -e "boot || goto failed">> "$IPXE_CONTENTS"
+			echo -e "goto start" >> "$IPXE_CONTENTS"
 			entries_found="$((entries_found+1))"
 		done
 	fi
 	umount /mnt
 
 	if [ "$ibft" = "1" ]; then
-		echo -e "set initiator-iqn $(uci get tgt.1.allow_name)" >> /tmp/partial.ipxe.header.tmp
-		echo -e "set username $(uci get tgt.user_in.user)" >> /tmp/partial.ipxe.header.tmp
-		echo -e "set password $(uci get tgt.user_in.password)" >> /tmp/partial.ipxe.header.tmp
-		echo -e "set reverse-username $(uci get tgt.user_out.user)" >> /tmp/partial.ipxe.header.tmp
-		echo -e "set reverse-password $(uci get tgt.user_out.password)" >> /tmp/partial.ipxe.header.tmp
+		echo -e "set initiator-iqn $(uci get tgt.1.allow_name)" >> "$IPXE_HEADER"
+		echo -e "set username $(uci get tgt.user_in.user)" >> "$IPXE_HEADER"
+		echo -e "set password $(uci get tgt.user_in.password)" >> "$IPXE_HEADER"
+		echo -e "set reverse-username $(uci get tgt.user_out.user)" >> "$IPXE_HEADER"
+		echo -e "set reverse-password $(uci get tgt.user_out.password)" >> "$IPXE_HEADER"
 
 		lun_idx=0
 		drive_idx="$(printf "%i" "0x80")"
@@ -179,20 +183,20 @@ EOF
 			target_uri="iscsi:\${target-server-ip}:::$lun_idx:$(uci get tgt.1.name)"
 			drive="$(printf "%x" "$drive_idx")"
 			drive_idx=$((drive_idx+1));
-			echo "sanhook --drive 0x$drive $target_uri" >> /tmp/partial.ipxe.header.tmp
+			echo "sanhook --drive 0x$drive $target_uri" >> "$IPXE_HEADER"
 		done
 
-		echo -e "item sanboot iBFT SAN boot" >> /tmp/partial.ipxe.menu.tmp
-		echo -e "" >> /tmp/partial.ipxe.contents.tmp
-		echo -e ":sanboot" >> /tmp/partial.ipxe.contents.tmp
-		echo -e "sanboot || goto failed" >> /tmp/partial.ipxe.contents.tmp
-		echo -e "goto start" >> /tmp/partial.ipxe.contents.tmp
+		echo -e "item sanboot iBFT SAN boot" >> "$IPXE_MENU"
+		echo -e "" >> "$IPXE_CONTENTS"
+		echo -e ":sanboot" >> "$IPXE_CONTENTS"
+		echo -e "sanboot || goto failed" >> "$IPXE_CONTENTS"
+		echo -e "goto start" >> "$IPXE_CONTENTS"
 	fi
 
 	cat \
-		/tmp/partial.ipxe.header.tmp \
-		/tmp/partial.ipxe.menu.tmp \
-		/tmp/partial.ipxe.contents.tmp \
+		"$IPXE_HEADER" \
+		"$IPXE_MENU" \
+		"$IPXE_CONTENTS" \
 		> /srv/pxe/bootentries/menu.ipxe
 	rm -f /tmp/partial.ipxe.*.tmp
 	if [ "$entries_found" = "0" ]; then
