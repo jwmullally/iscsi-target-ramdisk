@@ -1,7 +1,7 @@
-ALL_CURL_OPTS := $(CURL_OPTS) -L --fail --create-dirs
+ALL_CURL_OPTS := $(CURL_OPTS) -L --fail
 
 #VERSION := 22.03-SNAPSHOT
-VERSION := 22.03.0
+VERSION := 22.03.2
 BOARD := x86
 SUBTARGET := 64
 BUILDER := openwrt-imagebuilder-$(VERSION)-$(BOARD)-$(SUBTARGET).Linux-x86_64
@@ -19,18 +19,27 @@ all: images
 
 
 $(BUILD_DIR)/downloads:
+	mkdir -p \
+		$(BUILD_DIR)/downloads.tmp \
+		$(BUILD_DIR)/downloads.tmp/ipxe/x86 \
+		$(BUILD_DIR)/downloads.tmp/ipxe/x86_64
 	# OpenWrt Image Builder
-	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp -O https://downloads.openwrt.org/releases/$(VERSION)/targets/$(BOARD)/$(SUBTARGET)/$(BUILDER).tar.xz
+	cd $(BUILD_DIR)/downloads.tmp \
+		&& curl $(ALL_CURL_OPTS) -O https://downloads.openwrt.org/releases/$(VERSION)/targets/$(BOARD)/$(SUBTARGET)/$(BUILDER).tar.xz
 	# iPXE
-	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86 -O https://boot.ipxe.org/ipxe.pxe
-	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86 -O https://boot.ipxe.org/undionly.kpxe
-	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86_64 -O https://boot.ipxe.org/ipxe.efi
-	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/x86_64 -O https://boot.ipxe.org/snponly.efi
-	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/ -O https://boot.ipxe.org/ipxe.iso
-	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp/ipxe/ -O https://boot.ipxe.org/ipxe.usb
+	cd $(BUILD_DIR)/downloads.tmp/ipxe/x86 \
+		&& curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/ipxe.pxe \
+		&& curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/undionly.kpxe
+	cd $(BUILD_DIR)/downloads.tmp/ipxe/x86_64 \
+		&& curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/ipxe.efi \
+		&& curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/snponly.efi
+	cd $(BUILD_DIR)/downloads.tmp/ipxe/ \
+		&& curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/ipxe.iso \
+		&& curl $(ALL_CURL_OPTS) -O https://boot.ipxe.org/ipxe.usb
 	# ISOLINUX for ISO building
-	curl $(ALL_CURL_OPTS) --output-dir $(BUILD_DIR)/downloads.tmp -O https://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-6.03.tar.gz
-	cd $(BUILD_DIR)/downloads.tmp && tar -xf syslinux-6.03.tar.gz
+	cd $(BUILD_DIR)/downloads.tmp \
+		&& curl $(ALL_CURL_OPTS) -O https://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-6.03.tar.gz \
+		&& tar -xf syslinux-6.03.tar.gz
 	mv $(BUILD_DIR)/downloads.tmp $(BUILD_DIR)/downloads
 
 
