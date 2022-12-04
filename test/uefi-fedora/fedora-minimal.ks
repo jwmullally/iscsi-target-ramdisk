@@ -9,7 +9,7 @@ selinux --enforcing
 firewall --enabled --service=mdns
 services --enabled=sshd,NetworkManager,chronyd
 network --hostname test-target-fedora --bootproto=dhcp --device=enp2s0 --activate
-rootpw --plaintext fedora
+rootpw --plaintext pass1234
 shutdown
 
 zerombr

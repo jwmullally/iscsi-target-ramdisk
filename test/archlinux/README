@@ -9,7 +9,7 @@ scp in this directory
 
   archinstall --config user_configuration.json --disk-layout user_disk_layout.json
 
-(set root password to "archlinux")
+(set root password to "pass1234")
 
   ./postinstall-in-vm.sh
 

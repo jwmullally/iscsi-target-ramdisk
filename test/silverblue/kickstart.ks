@@ -5,7 +5,7 @@ timezone Etc/UTC
 firewall --use-system-defaults
 services --enabled=sshd
 network --hostname test-target-silverblue --bootproto=dhcp --device=enp2s0 --activate
-rootpw --plaintext silverblue
+rootpw --plaintext pass1234
 shutdown
 
 ignoredisk --only-use=vda

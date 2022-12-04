@@ -14,3 +14,7 @@ pacman --sync --needed $PKGMGR_OPTS \
 	unzip \
 	wget \
 	zlib
+
+# Extra build dependencies
+pacman --sync --needed $PKGMGR_OPTS \
+	cpio
