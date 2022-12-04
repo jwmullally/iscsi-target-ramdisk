@@ -64,7 +64,7 @@ Review and adjust the configuration files in this project to match your system.
 
 You'll mainly just want to update:
 
-* [`src/rootfs/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries)
+* [`rootfs/etc/uci-defaults/90-custom-bootentries`](rootfs/etc/uci-defaults/90-custom-bootentries)
 
   * `boot_partition`
 
@@ -78,11 +78,11 @@ You'll mainly just want to update:
 
     * Find your default Kernel command line from `/etc/default/grub` or `/proc/cmdline`. Note, this is ignored when it can be read fully from the `/boot/loader/entries` files.
 
-* [`src/rootfs/etc/uci-defaults/85-custom-tgt`](src/rootfs/etc/uci-defaults/85-custom-tgt)
+* [`rootfs/etc/uci-defaults/85-custom-tgt`](rootfs/etc/uci-defaults/85-custom-tgt)
 
   * Update the list of of block devices to share as iSCSI LUNs.
 
-* [`src/rootfs/usr/lib/opkg/info/custom-password.postinst`](src/rootfs/usr/lib/opkg/info/custom-password.postinst)
+* [`rootfs/usr/lib/opkg/info/custom-password.postinst`](rootfs/usr/lib/opkg/info/custom-password.postinst)
 
 And review:
 
@@ -160,7 +160,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 Configure the project. For this, only a subset of the above settings are needed:
 
-* [`src/rootfs/etc/uci-defaults/85-custom-tgt`](src/rootfs/etc/uci-defaults/85-custom-tgt)
+* [`rootfs/etc/uci-defaults/85-custom-tgt`](rootfs/etc/uci-defaults/85-custom-tgt)
 
   * Update the list of of block devices to share as iSCSI LUNs.
 
@@ -296,21 +296,21 @@ On the initiator:
 On the target host (containing the OS to remote boot):
 
 * `iSCSI Target Ramdisk` boots with its own kernel and stateless initramfs.
-* [`/etc/init.d/bootentries`](src/rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/pxe/bootentries` and creates entries in `/srv/pxe/bootentries/menu.ipxe`.
-  * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries).
+* [`/etc/init.d/bootentries`](rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/pxe/bootentries` and creates entries in `/srv/pxe/bootentries/menu.ipxe`.
+  * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](rootfs/etc/uci-defaults/90-custom-bootentries).
   * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, entries are created for all kernels matching `/boot/vmlinuz-*` along with their matching initramfs file and the `cmdline_default` arguments.
   * The contents of `cmdline_iscsi` are appended to the cmdline, which include the `netroot:iscsi:...` paramaters.
 * `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets.
-  * Configuration: [`/etc/uci-defaults/85-custom-tgt`](src/rootfs/etc/uci-defaults/85-custom-tgt).
+  * Configuration: [`/etc/uci-defaults/85-custom-tgt`](rootfs/etc/uci-defaults/85-custom-tgt).
 * `/etc/init.d/network` starts, which sets the first LAN interface to DHCP by default.
-  * Configuration: [`/etc/uci-defaults/80-custom-network`](src/rootfs/etc/uci-defaults/80-custom-network)
+  * Configuration: [`/etc/uci-defaults/80-custom-network`](rootfs/etc/uci-defaults/80-custom-network)
 * `/etc/init.d/dnsmasq` starts which provides PXE DHCP Proxy boot (to work alongside existing DHCP servers) and serves `/srv/pxe` via TFTP. Regular DHCP allocations are disabled by default.
-  * Configuration: [`/etc/uci-defaults/90-custom-dhcp`](src/rootfs/etc/uci-defaults/90-custom-dhcp).
+  * Configuration: [`/etc/uci-defaults/90-custom-dhcp`](rootfs/etc/uci-defaults/90-custom-dhcp).
 * `/etc/init.d/uhttpd` starts and serves `/srv/pxe` via HTTP access.
-  * Configuration: [`/etc/uci-defaults/95-custom-uhttpd`](src/rootfs/etc/uci-defaults/95-custom-uhttpd).
+  * Configuration: [`/etc/uci-defaults/95-custom-uhttpd`](rootfs/etc/uci-defaults/95-custom-uhttpd).
   * HTTP BASIC authentication is used to protect `/srv/pxe/bootentries` and `/srv/pxe/cgi-bin` containing the boot images and configuration.
-  * The [`/etc/init.d/pxe_access`](src/rootfs/etc/init.d/pxe_access) service can be used to enable/disable access to these files.
-* [`/etc/init.d/dhcpfallback`](src/rootfs/etc/init.d/dhcpfallback) starts, which sets LAN to a static IP if no existing DHCP servers were found during the specified time frame.
+  * The [`/etc/init.d/pxe_access`](rootfs/etc/init.d/pxe_access) service can be used to enable/disable access to these files.
+* [`/etc/init.d/dhcpfallback`](rootfs/etc/init.d/dhcpfallback) starts, which sets LAN to a static IP if no existing DHCP servers were found during the specified time frame.
   * If activated, `/etc/config/dhcp` is also changed from PXE DHCP Proxy mode back to regular DHCP server mode.
 
 On the initiator host (the one to run the OS on):
@@ -321,7 +321,7 @@ On the initiator host (the one to run the OS on):
 * iPXE is downloaded and executed, which issues another DHCP request and fetches `/srv/pxe/ipxe/entry.ipxe` over TFTP.
 * The user enters a username / password which are used as the authorization for the PXE HTTP requests.
   * Caution: Boot files and iSCSI credentials can still be sniffed as they are transferred over the network. Only use on a physically secure network or direct connection.
-* iPXE chainloads [`/srv/pxe/cgi-bin/get-menu-ipxe`](src/rootfs/srv/pxe/cgi-bin/get-menu-ipxe) over HTTP.
+* iPXE chainloads [`/srv/pxe/cgi-bin/get-menu-ipxe`](rootfs/srv/pxe/cgi-bin/get-menu-ipxe) over HTTP.
   * iSCSI access for the requesting initiator host's IP address is allowed through the firewall.
   * `/srv/pxe/bootentries/menu.ipxe` is returned and executed by iPXE.
 * (Optional, default) The iSCSI target connection details are stored in the iBFT ACPI table.

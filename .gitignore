@@ -1,5 +1,5 @@
 build/
-src/rootfs/etc/dropbear/
-src/rootfs/etc/uci-defaults/90-custom-password
+rootfs/etc/dropbear/
+rootfs/etc/uci-defaults/90-custom-password
 .vscode
 *.swp

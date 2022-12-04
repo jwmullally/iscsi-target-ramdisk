@@ -45,7 +45,7 @@ $(BUILD_DIR)/downloads:
 
 rootfs-contents: $(BUILD_DIR)/downloads
 	rm -rf $(BUILD_DIR)/rootfs
-	cp -rv src/rootfs $(BUILD_DIR)/rootfs
+	cp -rv rootfs $(BUILD_DIR)/rootfs
 	cp -f $(BUILD_DIR)/$(BUILDER)/target/linux/generic/other-files/init $(BUILD_DIR)/rootfs/
 	mkdir -p $(BUILD_DIR)/rootfs/srv/pxe/tftp/ipxe/x86
 	cp -f $(BUILD_DIR)/downloads/ipxe/x86/ipxe.pxe $(BUILD_DIR)/rootfs/srv/pxe/tftp/ipxe/x86
@@ -91,9 +91,9 @@ efi:
 
 keys:
 	# Create persistent ssh host keys
-	mkdir -p src/rootfs/etc/dropbear
-	ssh-keygen -N "" -t rsa -b 2048 -f src/rootfs/etc/dropbear/dropbear_rsa_host_key
-	ssh-keygen -N "" -t ed25519 -b 256 -f src/rootfs/etc/dropbear/dropbear_ed25519_host_key
+	mkdir -p rootfs/etc/dropbear
+	ssh-keygen -N "" -t rsa -b 2048 -f rootfs/etc/dropbear/dropbear_rsa_host_key
+	ssh-keygen -N "" -t ed25519 -b 256 -f rootfs/etc/dropbear/dropbear_ed25519_host_key
 	
 
 passwords:
