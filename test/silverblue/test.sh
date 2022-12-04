@@ -9,7 +9,7 @@ run_cmd="sshpass -e ssh $sshopts root@$target_ip"
 if [ "$1" = "shell" ]; then
 	$run_cmd
 else
-	sshpass -e rsync -e "ssh $sshopts" -a --exclude build ../.. "root@$target_ip:openwrt-iscsi-target-ramdisk"
+	sshpass -e rsync -e "ssh $sshopts" -a --exclude build ../.. "root@$target_ip:iscsi-target-ramdisk"
 
-	$run_cmd "openwrt-iscsi-target-ramdisk/test/silverblue/run-in-vm.sh"
+	$run_cmd "iscsi-target-ramdisk/test/silverblue/run-in-vm.sh"
 fi

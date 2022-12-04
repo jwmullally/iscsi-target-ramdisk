@@ -2,7 +2,7 @@
 
 ### Overview
 
-This folder contains scripts to generate minimal Linux VM images for different distributions, and installs this project in them. After installation, the VM's can be rebooted into the `OpenWrt iSCSI Target` boot entry, then the `test-initiator` VM can be started to test PXE boot to that machine.
+This folder contains scripts to generate minimal Linux VM images for different distributions, and installs this project in them. After installation, the VM's can be rebooted into the `iSCSI Target Ramdisk` boot entry, then the `test-initiator` VM can be started to test PXE boot to that machine.
 
 Hardcoded partition UUIDs are used so that we can set the configuration deterministically.
 
@@ -20,7 +20,7 @@ To test PXE DHCP Proxy mode when an existing DHCP server is present (in this cas
   * `./mk-vm-test-target-fedora.sh`
   * `./test.sh`
 
-* Reboot `test-target-fedora` into the `OpenWrt iSCSI Target` entry
+* Reboot `test-target-fedora` into the `iSCSI Target Ramdisk` entry
 
 * Boot `test-initiator`
 

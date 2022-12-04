@@ -1,4 +1,4 @@
-# openwrt-iscsi-target-ramdisk
+# iscsi-target-ramdisk
 
 ## Overview
 
@@ -15,7 +15,7 @@ You can also customize the OpenWrt ramdisk with any additional network configura
 
 * Connect your two computers via Ethernet. This can be either a direct connection or through an Ethernet switch already providing DHCP.
 
-* On the computer where this is installed (target), power on and select `OpenWrt iSCSI Target` from the boot menu.
+* On the computer where this is installed (target), power on and select `iSCSI Target Ramdisk` from the boot menu.
 
 * Power on the other computer (initiator), select the BIOS's built-in PXE boot.
 
@@ -58,7 +58,7 @@ While remote booting, treat disconnecting the network cable like unplugging your
 
 Download the latest release, or clone this repository and checkout the latest release tag.
 
-The only changes needed for your OS are to add Dracut iSCSI initiator support to your initramfs, and to create a boot entry for the `OpenWrt iSCSI Target` kernel and initramfs. The [`install.sh`](install.sh) script takes care of this.
+The only changes needed for your OS are to add Dracut iSCSI initiator support to your initramfs, and to create a boot entry for the `iSCSI Target Ramdisk` kernel and initramfs. The [`install.sh`](install.sh) script takes care of this.
 
 Review and adjust the configuration files in this project to match your system.
 
@@ -132,7 +132,7 @@ sudo ./install.sh
 
 ```
 dependencies/silverblue/build.sh
-toolbox run --container openwrt-iscsi-target-build make images
+toolbox run --container iscsi-target-ramdisk-build make images
 sudo dependencies/silverblue/install.sh
 sudo ./install.sh
 ```
@@ -164,17 +164,17 @@ Configure the project. For this, only a subset of the above settings are needed:
 
   * Update the list of of block devices to share as iSCSI LUNs.
 
-Build and install a working `OpenWrt iSCSI Target` image, depending on your setup:
+Build and install a working `iSCSI Target Ramdisk` image, depending on your setup:
 
 * Windows & Linux Dual Boot using GRUB: Follow the appropriate Linux instructions above and you can use the same image for PXE booting Windows.
 
-* Windows & UEFI: Build an EFI image using `make efi` on another Linux system, Live USB or VM (or download the `.efi` from the releases), copy `build/images/openwrt-iscsi-target.efi` to `EFI/openwrt-iscsi-target/` and add it to your UEFI boot menu.
+* Windows & UEFI: Build an EFI image using `make efi` on another Linux system, Live USB or VM (or download the `.efi` from the releases), copy `build/images/iscsi-target-ramdisk.efi` to `EFI/iscsi-target-ramdisk/` and add it to your UEFI boot menu.
 
   * To access the EFI partition from inside Windows, run the following in an Administrator Command Prompt: `mountvol X: /s`.
 
   * To add it to your BIOS boot options, select the file from your BIOS UEFI file browser if it has one.
   
-  * If your BIOS doesn't support selecting EFI files for boot, you can add the option to your EFI boot partition from Linux with something like `efibootmgr --create --disk /dev/nvme0n1 --part 2 --label 'openwrt-iscsi-target' --loader '\EFI\openwrt-iscsi-target\openwrt-iscsi-target.efi'`
+  * If your BIOS doesn't support selecting EFI files for boot, you can add the option to your EFI boot partition from Linux with something like `efibootmgr --create --disk /dev/nvme0n1 --part 2 --label 'iscsi-target-ramdisk' --loader '\EFI\iscsi-target-ramdisk\iscsi-target-ramdisk.efi'`
 
   * This file can be booted from your UEFI BIOS menu.
 
@@ -216,7 +216,7 @@ Preparing an existing Windows 10 system:
 
   * Boot the [iSCSI target as a USB Mass Storage device](https://github.com/jwmullally/openwrt-rpi4-iscsi-to-usb-bridge).
 
-  * Boot `openwrt-iscsi-initiator` on the target and a Linux Live CD on the initiator (e.g. Fedora or Ubuntu). Install `libvirtd` and `virt-manager`, attach the iSCSI drive using the script from <http://192.168.200.1:81/cgi-bin/iscsistart.sh>, create a Win10 VM with the existing `/dev/sd*` iSCSI drive, add the network card as a "PCI Host Device", then boot Windows in the VM once to install the network driver. This might not work if the hardware is too dissimilar and other system drivers are needed.
+  * Boot `iscsi-target-ramdisk` on the target and a Linux Live CD on the initiator (e.g. Fedora or Ubuntu). Install `libvirtd` and `virt-manager`, attach the iSCSI drive using the script from <http://192.168.200.1:81/cgi-bin/iscsistart.sh>, create a Win10 VM with the existing `/dev/sd*` iSCSI drive, add the network card as a "PCI Host Device", then boot Windows in the VM once to install the network driver. This might not work if the hardware is too dissimilar and other system drivers are needed.
 
 * Set your network card driver to start during early boot. (Seems not always necessary, first try PXE booting without this).
 
@@ -232,7 +232,7 @@ Preparing an existing Windows 10 system:
 
 PXE booting:
 
-* On the same Windows system, boot the `OpenWrt iSCSI Target` image from UEFI, GRUB or USB.
+* On the same Windows system, boot the `iSCSI Target Ramdisk` image from UEFI, GRUB or USB.
 
 * On the initiator host, boot using PXE (BIOS/CSM/Legacy or UEFI depending on your Windows installation) and choose the `iBFT SAN boot` option.
 
@@ -245,7 +245,7 @@ PXE booting:
 
 After the initial install, this solution should work indefinitely even as you upgrade your kernels.
 
-If you want to make changes to the OpenWrt configuration, you will only need to update `/boot/openwrt-iscsi-target-kernel.bin` and `/boot/openwrt-iscsi-target-initrd.img` by doing the following:
+If you want to make changes to the OpenWrt configuration, you will only need to update `/boot/iscsi-target-ramdisk-kernel.bin` and `/boot/iscsi-target-ramdisk-initrd.img` by doing the following:
 
 ```
 make images
@@ -255,7 +255,7 @@ sudo ./update.sh
 ### Uninstalling
 
 ```
-sudo /usr/local/sbin/uninstall-openwrt-iscsi-target.sh
+sudo /usr/local/sbin/uninstall-iscsi-target-ramdisk.sh
 ```
 
 
@@ -295,7 +295,7 @@ On the initiator:
 
 On the target host (containing the OS to remote boot):
 
-* `OpenWrt iSCSI Target` boots with its own kernel and stateless initramfs.
+* `iSCSI Target Ramdisk` boots with its own kernel and stateless initramfs.
 * [`/etc/init.d/bootentries`](src/rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/pxe/bootentries` and creates entries in `/srv/pxe/bootentries/menu.ipxe`.
   * Configuration: [`/etc/uci-defaults/90-custom-bootentries`](src/rootfs/etc/uci-defaults/90-custom-bootentries).
   * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, entries are created for all kernels matching `/boot/vmlinuz-*` along with their matching initramfs file and the `cmdline_default` arguments.
@@ -330,7 +330,7 @@ On the initiator host (the one to run the OS on):
 * iPXE launches the kernel using the included cmdline arguments, which contain the extra `netroot:iscsi:...` parameters.
 * The kernel starts, unpacks and launches the init process in the initramfs.
 * The Dracut modules are executed.
-* The dracut-network iSCSI module sees the `netroot:iscsi:...` arguments and uses them to start an Open iSCSI initiator connection to the `OpenWrt iSCSI Target` host. If successful, the iSCSI target LUN devices now appear as local block devices.
+* The dracut-network iSCSI module sees the `netroot:iscsi:...` arguments and uses them to start an Open iSCSI initiator connection to the `iSCSI Target Ramdisk` host. If successful, the iSCSI target LUN devices now appear as local block devices.
 * Booting continues as normal, mounting the root filesystem using the UUID and other regularly supplied cmdline arguments.
 * (NetworkManager) The BOOTIF interface is set to unmanaged with [this service](src/bootnet-nm-unmanaged.service) to prevent automatic reconfiguration
 * The target OS is now fully loaded on the initiator host.
@@ -368,7 +368,7 @@ Match OpenWrt structure and conventions as much as possible.
 
 * SecureBoot. ([Unlikely?](https://forum.openwrt.org/t/x86-uefi-secure-boot-installation/115666)). Provide instructions for self-signed images with `mokutil`?
 
-* Sort "OpenWrt iSCSI Target" entry under OS entries in bootloader menu.
+* Sort "iSCSI Target Ramdisk" entry under OS entries in bootloader menu.
 
 * [OpenWrt tgtd](https://github.com/openwrt/packages/blob/master/net/tgt/files/tgt.init): Support CRC32 Header + Data digests.
 
@@ -414,4 +414,4 @@ Copyright (C) 2022 Joseph Mullally
 
 License: [GPLv2](./LICENCE.txt)
 
-Project: <https://github.com/jwmullally/openwrt-iscsi-target-ramdisk>
+Project: <https://github.com/jwmullally/iscsi-target-ramdisk>

@@ -3,7 +3,7 @@ set -ex
 
 # Run this in the test VM
 
-cd openwrt-iscsi-target-ramdisk
+cd iscsi-target-ramdisk
 
 PKGMGR_OPTS="--yes" dependencies/debian/build.sh
 make images

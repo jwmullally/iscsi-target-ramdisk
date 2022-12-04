@@ -6,7 +6,7 @@ BOARD := x86
 SUBTARGET := 64
 BUILDER := openwrt-imagebuilder-$(VERSION)-$(BOARD)-$(SUBTARGET).Linux-x86_64
 PROFILE := generic
-EXTRA_IMAGE_NAME := iscsi-target
+EXTRA_IMAGE_NAME := iscsi-target-ramdisk
 # Example WiFi support: "wpad-openssl kmod-iwlwifi iwlwifi-firmware-iwl8265"
 # Example Emulated device support: "kmod-veth wpad-openssl kmod-mac80211-hwsim"
 PACKAGES := luci tgt blkid lsblk iperf3 luci-app-commands atop tcpdump ethtool -libustream-wolfssl libustream-openssl luci-ssl-openssl
@@ -63,30 +63,30 @@ images: $(BUILD_DIR)/$(BUILDER) rootfs-contents
 	cd $(BUILD_DIR)/$(BUILDER) && make image PROFILE="$(PROFILE)" EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" PACKAGES="$(PACKAGES)" FILES="../rootfs"
 	cat $(OUTPUT_DIR)/sha256sums
 	mkdir -p $(BUILD_DIR)/images
-	cp $(OUTPUT_DIR)/openwrt-*-kernel.bin $(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME)-kernel.bin
+	cp $(OUTPUT_DIR)/openwrt-*-kernel.bin $(BUILD_DIR)/images/$(EXTRA_IMAGE_NAME)-kernel.bin
 	# TODO: Build initramfs image with OpenWrt ImageBuilder built-in Makefile targets
-	src/tar2cpio.sh $(OUTPUT_DIR)/openwrt-*-rootfs.tar.gz $(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME)-initrd.img
+	src/tar2cpio.sh $(OUTPUT_DIR)/openwrt-*-rootfs.tar.gz $(BUILD_DIR)/images/$(EXTRA_IMAGE_NAME)-initrd.img
 	ls -hs $(BUILD_DIR)/images
 
 
 iso:
 	echo "Generating ISO / USB boot image"
 	src/create-boot-iso.sh \
-		$(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME).iso \
-		"OpenWrt-$(EXTRA_IMAGE_NAME)" \
+		$(BUILD_DIR)/images/$(EXTRA_IMAGE_NAME).iso \
+		"$(EXTRA_IMAGE_NAME)" \
 		$(BUILD_DIR)/downloads/syslinux-6.03 \
-		$(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME)-kernel.bin \
-		$(BUILD_DIR)/images/openwrt-$(EXTRA_IMAGE_NAME)-initrd.img \
+		$(BUILD_DIR)/images/$(EXTRA_IMAGE_NAME)-kernel.bin \
+		$(BUILD_DIR)/images/$(EXTRA_IMAGE_NAME)-initrd.img \
 		"consoleblank=600"
 
 efi:
 	objcopy \
 		--add-section .osrel=src/os-release --change-section-vma .osrel=0x20000 \
 		--add-section .cmdline=src/cmdline.txt --change-section-vma .cmdline=0x30000 \
-		--add-section .linux=build/images/openwrt-iscsi-target-kernel.bin --change-section-vma .linux=0x2000000 \
-		--add-section .initrd=build/images/openwrt-iscsi-target-initrd.img --change-section-vma .initrd=0x3000000 \
+		--add-section .linux=build/images/iscsi-target-ramdisk-kernel.bin --change-section-vma .linux=0x2000000 \
+		--add-section .initrd=build/images/iscsi-target-ramdisk-initrd.img --change-section-vma .initrd=0x3000000 \
 		/usr/lib/systemd/boot/efi/linuxx64.efi.stub \
-		build/images/openwrt-iscsi-target.efi
+		build/images/iscsi-target-ramdisk.efi
 	
 
 keys:

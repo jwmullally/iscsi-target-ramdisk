@@ -1,3 +1,3 @@
-NAME="OpenWrt iSCSI Target"
-ID=openwrt-iscsi-target
-HOME_URL="https://github.com/jwmullally/openwrt-iscsi-target-ramdisk"
+NAME="iSCSI Target Ramdisk"
+ID=iscsi-target-ramdisk
+HOME_URL="https://github.com/jwmullally/iscsi-target-ramdisk"

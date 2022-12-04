@@ -4,14 +4,14 @@
 # Other useful options: quiet
 
 cat <<'EOF'
-menuentry 'OpenWrt iSCSI Target' {
+menuentry 'iSCSI Target Ramdisk' {
 	load_video
 	insmod gzio
 	insmod part_gpt
 	insmod ext2
-	echo	'Loading OpenWrt Linux Kernel ...'
-	linux	/openwrt-iscsi-target-kernel.bin consoleblank=600
-	echo	'Loading OpenWrt initial ramdisk ...'
-	initrd	/openwrt-iscsi-target-initrd.img
+	echo	'Loading Kernel ...'
+	linux	/iscsi-target-ramdisk-kernel.bin consoleblank=600
+	echo	'Loading Initial Ramdisk ...'
+	initrd	/iscsi-target-ramdisk-initrd.img
 }
 EOF

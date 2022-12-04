@@ -26,7 +26,7 @@ validate_bootentries_section() {
 		'cmdline_default:string' \
 		'cmdline_iscsi:string' \
 		'cmdline_remove:string' \
-		'menu_title:string:OpenWrt PXE Boot Menu' \
+		'menu_title:string:iSCSI Target Ramdisk PXE Boot Menu' \
 		'menu_username:string' \
 		'menu_password:string'
 }
