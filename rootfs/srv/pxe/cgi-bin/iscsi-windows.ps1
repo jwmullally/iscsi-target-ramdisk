@@ -9,6 +9,9 @@ network_flush_cache
 network_get_ipaddr lan_addr "lan"
 
 cat <<EOF
+Start-Service -Name MSiSCSI
+Set-Service -Name MSiSCSI -StartupType Automatic
+
 Set-InitiatorPort \`
     -NodeAddress (Get-InitiatorPort).NodeAddress \`
     -NewNodeAddress "$(uci get tgt.1.allow_name)"
@@ -26,4 +29,7 @@ Connect-IscsiTarget \`
     -ChapUsername "$(uci get tgt.user_in.user)" \`
     -ChapSecret "$(uci get tgt.user_in.password)" \`
     -IsPersistent \$true
+
+Update-HostStorageCache
+Get-Disk
 EOF

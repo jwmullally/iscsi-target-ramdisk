@@ -5,6 +5,7 @@ virt-install \
     --connect qemu:///system \
     --name test-target-win10 \
     --ram 4096 \
+    --cpu Skylake-Client-noTSX-IBRS \
     --vcpus 2 \
     --arch x86_64 \
     --os-variant win10 \

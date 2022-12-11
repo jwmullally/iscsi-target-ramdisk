@@ -11,6 +11,26 @@ For example, you can run your laptop OS on your more powerful desktop while stil
 You can also customize the OpenWrt ramdisk with any additional network configuration, files and packages you want.
 
 
+## Quickstart
+
+(Using Fedora as an example):
+
+```
+git clone https://github.com/jwmullally/iscsi-target-ramdisk.git
+cd iscsi-target-ramdisk
+
+# Change boot_partition, boot_path and cmdline_default
+gedit rootfs/etc/uci-defaults/90-custom-bootentries
+# Change tgt.1_1.device
+gedit rootfs/etc/uci-defaults/85-custom-tgt
+
+sudo dependencies/fedora/build.sh
+make images
+sudo dependencies/fedora/install.sh
+sudo ./install.sh
+```
+
+
 ## Usage
 
 * Connect your two computers via Ethernet. This can be either a direct connection or through an Ethernet switch already providing DHCP.
@@ -156,33 +176,124 @@ mv /boot/initramfs-$(uname -r).img /boot/initramfs-linux.img
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
-### Windows 10
+## Installation on Windows 10
 
-Configure the project. For this, only a subset of the above settings are needed:
+Windows is a little more complicated and requires these steps to be done to prepare it for remote iSCSI boot:
 
-* [`rootfs/etc/uci-defaults/85-custom-tgt`](rootfs/etc/uci-defaults/85-custom-tgt)
+* Building `iscsi-target-ramdisk.efi`
+* Adding a boot entry for the EFI image
+* Configure the iSCSI Target
+* Install the initiator NIC driver and devices
+* Disable Pagefile
 
-  * Update the list of of block devices to share as iSCSI LUNs.
+Because the IP of the iSCSI target is fixed in iscsicpl, you should run `iscsi-target-ramdisk` in static IP mode (i.e. `192.168.200.1`) or with a static DHCP lease from your local router.
 
-Build and install a working `iSCSI Target Ramdisk` image, depending on your setup:
+### Building `iscsi-target-ramdisk.efi`
 
-* Windows & Linux Dual Boot using GRUB: Follow the appropriate Linux instructions above and you can use the same image for PXE booting Windows.
+If you have a Linux installation and use GRUB, you should instead follow the Linux installation instructions elsewhere in this guide.
 
-* Windows & UEFI: Build an EFI image using `make efi` on another Linux system, Live USB or VM (or download the `.efi` from the releases), copy `build/images/iscsi-target-ramdisk.efi` to `EFI/iscsi-target-ramdisk/` and add it to your UEFI boot menu.
+Under Windows, you can build the project in the Windows Subsystem for Linux, and copy the `iscsi-target-ramdisk.efi` image to the EFI system partition and add a boot entry.
 
-  * To access the EFI partition from inside Windows, run the following in an Administrator Command Prompt: `mountvol X: /s`.
+Install the default WSL Ubuntu installation:
+```
+wsl --install
+```
 
-  * To add it to your BIOS boot options, select the file from your BIOS UEFI file browser if it has one.
-  
-  * If your BIOS doesn't support selecting EFI files for boot, you can add the option to your EFI boot partition from Linux with something like `efibootmgr --create --disk /dev/nvme0n1 --part 2 --label 'iscsi-target-ramdisk' --loader '\EFI\iscsi-target-ramdisk\iscsi-target-ramdisk.efi'`
+Download, configure and build `iscsi-target-ramdisk.efi`:
+```
+git clone https://github.com/jwmullally/iscsi-target-ramdisk.git
+cd iscsi-target-ramdisk
 
-  * This file can be booted from your UEFI BIOS menu.
+# Change boot_partition, boot_path and cmdline_default
+nano rootfs/etc/uci-defaults/90-custom-bootentries
+# Change tgt.1_1.device
+nano rootfs/etc/uci-defaults/85-custom-tgt
 
-* Windows & BIOS/Legacy/CSM boot: Build the ISO on another Linux system and flash to a USB drive, or download one from the releases and customize the settings in `/etc/config` at runtime.
+sudo dependencies/ubuntu/build.sh
+# Workaround spaces in WSL PATH: https://openwrt.org/docs/guide-developer/toolchain/wsl
+PATH=/usr/sbin:/usr/bin:/sbin:/bin make images
+make efi
 
-Preparing an existing Windows 10 system:
+WIN_USER="$(cmd.exe /c 'echo %USERNAME%' | tr -d '[:space:]')"
+cp build/images/iscsi-target-ramdisk.efi "/mnt/c/Users/$WIN_USER/Downloads/"
+```
+
+Alternatively, you can build the ISO and flash to a USB key and boot from that:
+```
+sudo dependencies/ubuntu/build-iso.sh
+make iso
+
+WIN_USER="$(cmd.exe /c 'echo %USERNAME%' | tr -d '[:space:]')"
+cp build/images/iscsi-target-ramdisk.iso "/mnt/c/Users/$WIN_USER/Downloads/"
+```
+
+### Adding a boot entry for the EFI image
+
+Copy the image to the EFI boot partition:
+```
+mountvol S: /s
+mkdir S:\EFI\iscsi-target-ramdisk
+copy %USERPROFILE%\Downloads\iscsi-target-ramdisk.efi S:\EFI\iscsi-target-ramdisk\iscsi-target-ramdisk.efi
+mountvol S: /d
+```
+
+Add a new entry to the system EFI Boot Manager ([Reference](https://www.insanelymac.com/forum/topic/338720-creating-efi-boot-entries-using-bcdedit-in-windows/)).
+
+```
+bcdedit /copy "{bootmgr}" /d "iscsi-target-ramdisk"
+# The entry was successfully copied to {34e8383c-73a7-11e9-9cb0-94de8078a7b5}.
+
+mountvol S: /s
+bcdedit /set "{34e8383d-73a7-11e9-9cb0-94de8078a7b5}" device partition=S:
+mountvol S: /d
+bcdedit /set "{34e8383d-73a7-11e9-9cb0-94de8078a7b5}" path \EFI\iscsi-target-ramdisk\iscsi-target-ramdisk.efi
+
+bcdedit /deletevalue "{34e8383d-73a7-11e9-9cb0-94de8078a7b5}" locale
+bcdedit /deletevalue "{34e8383d-73a7-11e9-9cb0-94de8078a7b5}" inherit
+bcdedit /deletevalue "{34e8383d-73a7-11e9-9cb0-94de8078a7b5}" default
+bcdedit /deletevalue "{34e8383d-73a7-11e9-9cb0-94de8078a7b5}" resumeobject
+bcdedit /deletevalue "{34e8383d-73a7-11e9-9cb0-94de8078a7b5}" displayorder
+bcdedit /deletevalue "{34e8383d-73a7-11e9-9cb0-94de8078a7b5}" toolsdisplayorder
+bcdedit /deletevalue "{34e8383d-73a7-11e9-9cb0-94de8078a7b5}" timeout
+```
+
+(The above is roughly equivalent to the following under Linux: `efibootmgr --create --disk /dev/sda --part 2 --label 'iscsi-target-ramdisk' --loader '\EFI\iscsi-target-ramdisk\iscsi-target-ramdisk.efi'`)
+
+Reboot the computer and enter the system Boot menu, and you should see the new `iscsi-target-ramdisk` entry.
+
+Some older systems will not show these extra EFI boot options. If this is the case for you, you should remove this `bcdedit` entry and install an EFI boot loader like [rEFInd](<https://www.rodsbooks.com/refind/>) or GRUB.
+
+To remove the boot entry, do the following:
+```
+bcdedit /delete "{34e8383d-73a7-11e9-9cb0-94de8078a7b5}"
+```
+
+To remove the EFI image, do:
+```
+mountvol S: /s
+del S:\EFI\iscsi-target-ramdisk\iscsi-target-ramdisk.efi
+rmdir S:\EFI\iscsi-target-ramdisk
+mountvol S: /d
+```
+
+### Configure the iSCSI Target
+
+Preparing an existing regular Windows 10 installation: For iSCSI boot to work, a persistent iSCSI connection to the target must already be configured. When Windows is booting normally, this iSCSI connection will be disconnected and unused.
 
 * Temporarily boot the image/ISO/USB on another system connected directly via Ethernet.
+
+  * (Or alternatively, boot the ISO on the same system as a Hyper-V VM):
+
+```
+New-VMSwitch -Name InternalSwitch -SwitchType Internal
+New-VM -Name iscsi-target-ramdisk-iso -MemoryStartupBytes 2GB -BootDevice CD -NewVHDPath "C:\Users\Public\Documents\Hyper-V\Virtual Hard Disks\iscsi-target-ramdisk.vhdx" -NewVHDSizeBytes 1GB -Generation 1 -Switch InternalSwitch
+Set-VMDvdDrive -VMName iscsi-target-ramdisk-iso -Path "$env:USERPROFILE\Downloads\iscsi-target-ramdisk.iso"
+
+Start-VM -Name iscsi-target-ramdisk-iso
+Restart-NetAdapter -Name "vEthernet (InternalSwitch)"
+# Interface should receive a 192.168.200.0/24 IP address
+Get-NetIPAddress | Where-Object {$_.InterfaceAlias -eq "vEthernet (InternalSwitch)"}
+```
 
   * It should start using the default static IP settings `192.168.200.1`.
 
@@ -196,7 +307,33 @@ Preparing an existing Windows 10 system:
 
   * Warning: This will overwrite your existing Windows iSCSI Initiator Name and Reverse CHAP Secret. To preserve them, set them first in `/etc/config/tgt` to match your existing Windows settings.
 
-  * (Alternatively, copy + paste the commands from <http://192.168.200.1:81/cgi-bin/iscsi-windows.ps1> into an Administrator Powershell).
+  * (Alternatively, copy + paste the commands from <http://192.168.200.1:81/cgi-bin/iscsi-windows.ps1> into an Administrator Powershell), or use the following example:
+
+```ps1
+Start-Service -Name MSiSCSI
+Set-Service -Name MSiSCSI -StartupType Automatic
+
+Set-InitiatorPort `
+    -NodeAddress (Get-InitiatorPort).NodeAddress `
+    -NewNodeAddress "iqn.2018-04.org.example:initiator-host"
+
+Set-IscsiChapSecret `
+    -ChapSecret "password5678"
+
+New-IscsiTargetPortal `
+    -TargetPortalAddress "192.168.200.1"
+
+Connect-IscsiTarget `
+    -TargetPortalAddress "192.168.200.1" `
+    -NodeAddress "iqn.2018-04.org.example:target-host" `
+    -AuthenticationType MUTUALCHAP `
+    -ChapUsername "iscsiuser_in" `
+    -ChapSecret "password1234" `
+    -IsPersistent $true
+
+Update-HostStorageCache
+Get-Disk
+```  
 
   * Initiator name: `target` -> `<allow_name>`.
 
@@ -209,6 +346,8 @@ Preparing an existing Windows 10 system:
   * Perform mutual authentication: Enabled.
 
   * Add this connection to the list of Favorite Targets: Enabled.
+
+### Install the initiator NIC driver and devices
 
 * Install the driver for the network card used by the initiator. This is complicated as it requires some other way of booting the target OS on the initiator, but only needs to be done once. This can be done in one of the following ways:
 
@@ -226,11 +365,28 @@ Preparing an existing Windows 10 system:
 
   * Repeat for each `ControlSet001`, `ControlSet002` etc.
 
-* Disable the pagefile. (Without doing this, you may encounter `IRQL_NOT_LESS_OR_EQUAL` STOP codes on network boot).
+### Disable the pagefile
 
-  * System -> Advanced System Properties -> Performance -> Pagefile: Disabled.
+Disable the pagefile. Without doing this, you may encounter `IRQL_NOT_LESS_OR_EQUAL` STOP codes on network boot.
 
-PXE booting:
+* System -> Advanced System Properties -> Performance -> Pagefile: Disabled.
+
+  * (Or alternatively in PowerShell):
+```ps1
+$cs = gwmi Win32_ComputerSystem
+if ($cs.AutomaticManagedPagefile) {
+    $cs.AutomaticManagedPagefile = $False
+    $cs.Put()
+}
+$pg = gwmi win32_pagefilesetting
+if ($pg) {
+    $pg.Delete()
+}
+```
+
+### PXE booting Windows
+
+After preparing the system with the instructions above, you can now use PXE to iSCSI boot the Windows system.
 
 * On the same Windows system, boot the `iSCSI Target Ramdisk` image from UEFI, GRUB or USB.
 
