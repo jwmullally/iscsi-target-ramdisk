@@ -18,6 +18,13 @@ wait_for_lan_ipaddr() {
 	done
 }
 
+
+error_exit() {
+	echo "Error: " "$*"
+	exit 1
+}
+
+
 validate_bootentries_section() {
 	uci_load_validate bootentries bootentries "$1" "$2" \
 		'boot_partition:string' \
@@ -99,75 +106,79 @@ goto start
 # Boot entries
 EOF
 
-	umount -f /mnt || true
-	mount -o ro "$boot_partition" /mnt || echo "Error: Unable to mount boot partition: $boot_partition"
-
 	entries_found="0"
-	if [ -d "/mnt/$boot_path/loader/entries" ]; then
-		echo "Searching for BootLoaderSpec files in /mnt/$boot_path/loader/entries ..."
-		# Create an menu entry for every BootLoaderSpec file
-		for entry in "/mnt/$boot_path/loader/entries"/*.conf; do
-			TITLE="$(sed -n 's/^title[ \t]*\(.*\)/\1/p' $entry)"
-			KERNEL_PATH="$(sed -n 's/^linux[ \t]*\(.*\)/\1/p' $entry)"
-			INITRD_PATH="$(sed -n 's/^initrd[ \t]*\(.*\)/\1/p' $entry)"
-			OPTIONS="$(sed -n 's/^options[ \t]*\(.*\)/\1/p' $entry | sed 's/ quiet//g')"
-			if [ -n "$TITLE" -a -n "$KERNEL_PATH" -a -n "$INITRD_PATH" ]; then
-				LABEL="$(basename "$entry")"
+	umount /mnt || true
+
+	if [ -n "$boot_partition" ]; then
+		mount -o ro "$boot_partition" /mnt || error_exit "Unable to mount boot_partition: $boot_partition"
+		test -d "/mnt/$boot_path" || error_exit "Unable to find boot_path $boot_path on boot_partition $boot_partition"
+
+		if [ -d "/mnt/$boot_path/loader/entries" ]; then
+			echo "Searching for BootLoaderSpec files in /mnt/$boot_path/loader/entries ..."
+			# Create an menu entry for every BootLoaderSpec file
+			for entry in "/mnt/$boot_path/loader/entries"/*.conf; do
+				TITLE="$(sed -n 's/^title[ \t]*\(.*\)/\1/p' $entry)"
+				KERNEL_PATH="$(sed -n 's/^linux[ \t]*\(.*\)/\1/p' $entry)"
+				INITRD_PATH="$(sed -n 's/^initrd[ \t]*\(.*\)/\1/p' $entry)"
+				OPTIONS="$(sed -n 's/^options[ \t]*\(.*\)/\1/p' $entry | sed 's/ quiet//g')"
+				if [ -n "$TITLE" -a -n "$KERNEL_PATH" -a -n "$INITRD_PATH" ]; then
+					LABEL="$(basename "$entry")"
+					mkdir -p "/srv/pxe/bootentries/$LABEL"
+					KERNEL_FILE="$(basename "$KERNEL_PATH")"
+					INITRD_FILE="$(basename "$INITRD_PATH")"
+					KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
+					INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
+					cp "/mnt/$boot_path/$KERNEL_PATH" "/srv/pxe/$KERNEL_IMG"
+					cp "/mnt/$boot_path/$INITRD_PATH" "/srv/pxe/$INITRD_IMG"
+					chmod 644 "/srv/pxe/$KERNEL_IMG"
+					chmod 644 "/srv/pxe/$INITRD_IMG"
+					echo -e "item $LABEL $TITLE" >> "$IPXE_MENU"
+			
+					echo -e "" >> "$IPXE_CONTENTS"
+					echo -e ":$LABEL" >> "$IPXE_CONTENTS"
+					echo -e "kernel \${boot-url}$KERNEL_IMG" >> "$IPXE_CONTENTS"
+					echo -e "initrd \${boot-url}$INITRD_IMG" >> "$IPXE_CONTENTS"
+					echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $OPTIONS $cmdline_iscsi" >> "$IPXE_CONTENTS"
+					echo -e "boot || goto failed">> "$IPXE_CONTENTS"
+					echo -e "goto start" >> "$IPXE_CONTENTS"
+					entries_found="$((entries_found+1))"
+				fi
+			done
+		else
+			echo "Searching for kernels in /mnt/$boot_path ..."
+			for KERNEL_FILE in $(ls -t "/mnt/$boot_path" | grep 'vmlinuz-.*' | grep -v ".hmac$"); do
+				KERNEL_VERSION="$(echo $KERNEL_FILE | sed 's/vmlinuz-//g')"
+				# Find matching Initramfs image
+				if [ -f "/mnt/$boot_path/initramfs-$KERNEL_VERSION.img" ]; then
+					INITRD_FILE="initramfs-$KERNEL_VERSION.img"
+				elif [ -f "/mnt/$boot_path/initrd.img-$KERNEL_VERSION" ]; then
+					INITRD_FILE="initrd.img-$KERNEL_VERSION"
+				else
+					echo "Warning: could not find any initramfs image for PXE TFTP boot matching kernel $KERNEL_FILE, skipping..."
+					continue
+				fi
+				LABEL="$KERNEL_FILE"
 				mkdir -p "/srv/pxe/bootentries/$LABEL"
-				KERNEL_FILE="$(basename "$KERNEL_PATH")"
-				INITRD_FILE="$(basename "$INITRD_PATH")"
 				KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
 				INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
-				cp "/mnt/$boot_path/$KERNEL_PATH" "/srv/pxe/$KERNEL_IMG"
-				cp "/mnt/$boot_path/$INITRD_PATH" "/srv/pxe/$INITRD_IMG"
+				cp "/mnt/$boot_path/$KERNEL_FILE" "/srv/pxe/$KERNEL_IMG"
+				cp "/mnt/$boot_path/$INITRD_FILE" "/srv/pxe/$INITRD_IMG"
 				chmod 644 "/srv/pxe/$KERNEL_IMG"
 				chmod 644 "/srv/pxe/$INITRD_IMG"
-				echo -e "item $LABEL $TITLE" >> "$IPXE_MENU"
+				echo -e "item $LABEL $LABEL" >> "$IPXE_MENU"
 		
 				echo -e "" >> "$IPXE_CONTENTS"
 				echo -e ":$LABEL" >> "$IPXE_CONTENTS"
 				echo -e "kernel \${boot-url}$KERNEL_IMG" >> "$IPXE_CONTENTS"
 				echo -e "initrd \${boot-url}$INITRD_IMG" >> "$IPXE_CONTENTS"
-				echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $OPTIONS $cmdline_iscsi" >> "$IPXE_CONTENTS"
+				echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $cmdline_default $cmdline_iscsi" >> "$IPXE_CONTENTS"
 				echo -e "boot || goto failed">> "$IPXE_CONTENTS"
 				echo -e "goto start" >> "$IPXE_CONTENTS"
 				entries_found="$((entries_found+1))"
-			fi
-		done
-	else
-		echo "Searching for kernels in /mnt/$boot_path ..."
-		for KERNEL_FILE in $(ls -t "/mnt/$boot_path" | grep 'vmlinuz-.*' | grep -v ".hmac$"); do
-			KERNEL_VERSION="$(echo $KERNEL_FILE | sed 's/vmlinuz-//g')"
-			# Find matching Initramfs image
-			if [ -f "/mnt/$boot_path/initramfs-$KERNEL_VERSION.img" ]; then
-				INITRD_FILE="initramfs-$KERNEL_VERSION.img"
-			elif [ -f "/mnt/$boot_path/initrd.img-$KERNEL_VERSION" ]; then
-				INITRD_FILE="initrd.img-$KERNEL_VERSION"
-			else
-				echo "Warning: could not find any initramfs image for PXE TFTP boot matching kernel $KERNEL_FILE, skipping..."
-				continue
-			fi
-			LABEL="$KERNEL_FILE"
-			mkdir -p "/srv/pxe/bootentries/$LABEL"
-			KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
-			INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
-			cp "/mnt/$boot_path/$KERNEL_FILE" "/srv/pxe/$KERNEL_IMG"
-			cp "/mnt/$boot_path/$INITRD_FILE" "/srv/pxe/$INITRD_IMG"
-			chmod 644 "/srv/pxe/$KERNEL_IMG"
-			chmod 644 "/srv/pxe/$INITRD_IMG"
-			echo -e "item $LABEL $LABEL" >> "$IPXE_MENU"
-	
-			echo -e "" >> "$IPXE_CONTENTS"
-			echo -e ":$LABEL" >> "$IPXE_CONTENTS"
-			echo -e "kernel \${boot-url}$KERNEL_IMG" >> "$IPXE_CONTENTS"
-			echo -e "initrd \${boot-url}$INITRD_IMG" >> "$IPXE_CONTENTS"
-			echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $cmdline_default $cmdline_iscsi" >> "$IPXE_CONTENTS"
-			echo -e "boot || goto failed">> "$IPXE_CONTENTS"
-			echo -e "goto start" >> "$IPXE_CONTENTS"
-			entries_found="$((entries_found+1))"
-		done
+			done
+		fi
+		umount /mnt || error_exit "Unable to unmount boot partition: '$boot_partition'"
 	fi
-	umount /mnt
 
 	if [ "$ibft" = "1" ]; then
 		echo -e "set initiator-iqn $(uci get tgt.1.allow_name)" >> "$IPXE_HEADER"
@@ -199,11 +210,9 @@ EOF
 		"$IPXE_CONTENTS" \
 		> /srv/pxe/bootentries/menu.ipxe
 	rm -f /tmp/partial.ipxe.*.tmp
-	if [ "$entries_found" = "0" ]; then
-		echo "Could not find any boot entries for PXE TFTP boot"
-		return 1
-	fi
+
 	echo "Found $entries_found boot entries"
+	echo -e "\nFound $entries_found boot entries for PXE menu\n" > /dev/console
 }
 
 reload_service() {

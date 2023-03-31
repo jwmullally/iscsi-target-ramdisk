@@ -6,6 +6,7 @@ echo
 
 if [ -n "$REMOTE_ADDR" ]; then
 	logger -p notice -t bootentries "Allowing iSCSI access for $REMOTE_ADDR"
+	echo -e "\nAllowing iSCSI access for $REMOTE_ADDR\n" > /dev/console
 	uci -q delete firewall.block_iscsi.src_ip
 	uci -q add_list firewall.block_iscsi.src_ip="!$REMOTE_ADDR"
 	uci -q commit firewall
