@@ -4,8 +4,8 @@ set -e
 # Add an extra HTTP server for the PXE files
 
 cat > /etc/httpd.srv_pxe.conf <<EOF
-/bootentries/:$(uci get bootentries.@bootentries[0].menu_username):$(uci get bootentries.@bootentries[0].menu_password)
-/cgi-bin/:$(uci get bootentries.@bootentries[0].menu_username):$(uci get bootentries.@bootentries[0].menu_password)
+/pxe_menu/:$(uci get pxe_menu.@pxe_menu[0].menu_username):$(uci get pxe_menu.@pxe_menu[0].menu_password)
+/cgi-bin/:$(uci get pxe_menu.@pxe_menu[0].menu_username):$(uci get pxe_menu.@pxe_menu[0].menu_password)
 EOF
 
 uci -q batch << EOF

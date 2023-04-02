@@ -4,19 +4,19 @@ set -e
 # Settings for copying kernel images from your device's disk to the ramdisk's
 # PXE boot folder. Customize this for your specific partitions.
 
-uci import bootentries < /dev/null
-uci add bootentries bootentries
+uci import pxe_menu < /dev/null
+uci add pxe_menu pxe_menu
 
 # Specify the boot partition. It's recommended to instead use blkid IDs
 # instead of e.g. "/dev/sda" to avoid inconsistent block device numbering.
-uci set bootentries.@bootentries[0].boot_partition="$(blkid --uuid 'b7b071ef-8c7f-480c-b8d5-a02fdae46f90')"
+uci set pxe_menu.@pxe_menu[0].boot_partition="$(blkid --uuid 'b7b071ef-8c7f-480c-b8d5-a02fdae46f90')"
 
 # boot_path is the location of the kernels relative to boot_partition.
 # E.g. "/", or "/boot" if included in the main root partition
-uci set bootentries.@bootentries[0].boot_path="/"
+uci set pxe_menu.@pxe_menu[0].boot_path="/"
 
 # If we can't determine the kernel command line, use this
-uci set bootentries.@bootentries[0].cmdline_default="\
+uci set pxe_menu.@pxe_menu[0].cmdline_default="\
 ro \
 rhgb \
 root=/dev/disk/by-uuid/5b6621d0-15ae-4c93-b9d6-f2a197a9ef06 \
@@ -25,10 +25,10 @@ root=/dev/disk/by-uuid/5b6621d0-15ae-4c93-b9d6-f2a197a9ef06 \
 ## Use iSCSI Boot Firmware Table (iBFT) to pass the iSCSI connection
 ## details to dracut initrd through an iBFT ACPI table.
 
-uci set bootentries.@bootentries[0].ibft="1"
+uci set pxe_menu.@pxe_menu[0].ibft="1"
 
 # Specify the dracut-network iSCSI parameters
-uci set bootentries.@bootentries[0].cmdline_iscsi="\
+uci set pxe_menu.@pxe_menu[0].cmdline_iscsi="\
 rd.shell \
 rd.retry=5 \
 netroot=iscsi \
@@ -45,10 +45,10 @@ systemd.mask=hibernate.target \
 # # resort to this in those situations. Note this will leak the target password
 # # to all users through /proc/cmdline.
 # 
-# uci set bootentries.@bootentries[0].ibft="0"
+# uci set pxe_menu.@pxe_menu[0].ibft="0"
 # 
 # # Specify the dracut-network iSCSI parameters
-# uci set bootentries.@bootentries[0].cmdline_iscsi="\
+# uci set pxe_menu.@pxe_menu[0].cmdline_iscsi="\
 # rd.shell \
 # rd.retry=5 \
 # netroot=iscsi:\${target-server-ip}::::$(uci get tgt.1.name) \
@@ -66,11 +66,11 @@ systemd.mask=hibernate.target \
 # "
 
 # Remove these from any found cmdlines (TODO)
-uci set bootentries.@bootentries[0].cmdline_remove="quiet"
+uci set pxe_menu.@pxe_menu[0].cmdline_remove="quiet"
 
 # PXE menu settings
-uci set bootentries.@bootentries[0].menu_title="$(uci get system.@system[0].hostname) - PXE Boot Menu"
-uci set bootentries.@bootentries[0].menu_username='pxe'
-uci set bootentries.@bootentries[0].menu_password='pass1234'
+uci set pxe_menu.@pxe_menu[0].menu_title="$(uci get system.@system[0].hostname) - PXE Boot Menu"
+uci set pxe_menu.@pxe_menu[0].menu_username='pxe'
+uci set pxe_menu.@pxe_menu[0].menu_password='pass1234'
 
-uci commit bootentries
+uci commit pxe_menu

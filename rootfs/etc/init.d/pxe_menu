@@ -25,8 +25,8 @@ error_exit() {
 }
 
 
-validate_bootentries_section() {
-	uci_load_validate bootentries bootentries "$1" "$2" \
+validate_pxe_menu_section() {
+	uci_load_validate pxe_menu pxe_menu "$1" "$2" \
 		'boot_partition:string' \
 		'boot_path:string:/' \
 		'ibft:bool:0' \
@@ -38,7 +38,7 @@ validate_bootentries_section() {
 		'menu_password:string'
 }
 
-bootentries_config() {
+pxe_menu_config() {
 	[ "$2" = 0 ] || {
 		echo "validation failed"
 		return 1
@@ -55,8 +55,8 @@ set boot-url http://\${username:uristring}:\${password:uristring}@\${target-serv
 chain \${boot-url}cgi-bin/get-menu-ipxe
 EOF
 
-	rm -rf /srv/pxe/bootentries
-	mkdir /srv/pxe/bootentries
+	rm -rf /srv/pxe/pxe_menu
+	mkdir /srv/pxe/pxe_menu
 
 	IPXE_HEADER="/tmp/partial.ipxe.header.tmp"
 	IPXE_MENU="/tmp/partial.ipxe.menu.tmp"
@@ -123,11 +123,11 @@ EOF
 				OPTIONS="$(sed -n 's/^options[ \t]*\(.*\)/\1/p' $entry | sed 's/ quiet//g')"
 				if [ -n "$TITLE" -a -n "$KERNEL_PATH" -a -n "$INITRD_PATH" ]; then
 					LABEL="$(basename "$entry")"
-					mkdir -p "/srv/pxe/bootentries/$LABEL"
+					mkdir -p "/srv/pxe/pxe_menu/$LABEL"
 					KERNEL_FILE="$(basename "$KERNEL_PATH")"
 					INITRD_FILE="$(basename "$INITRD_PATH")"
-					KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
-					INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
+					KERNEL_IMG="pxe_menu/$LABEL/$KERNEL_FILE"
+					INITRD_IMG="pxe_menu/$LABEL/$INITRD_FILE"
 					cp "/mnt/$boot_path/$KERNEL_PATH" "/srv/pxe/$KERNEL_IMG"
 					cp "/mnt/$boot_path/$INITRD_PATH" "/srv/pxe/$INITRD_IMG"
 					chmod 644 "/srv/pxe/$KERNEL_IMG"
@@ -158,9 +158,9 @@ EOF
 					continue
 				fi
 				LABEL="$KERNEL_FILE"
-				mkdir -p "/srv/pxe/bootentries/$LABEL"
-				KERNEL_IMG="bootentries/$LABEL/$KERNEL_FILE"
-				INITRD_IMG="bootentries/$LABEL/$INITRD_FILE"
+				mkdir -p "/srv/pxe/pxe_menu/$LABEL"
+				KERNEL_IMG="pxe_menu/$LABEL/$KERNEL_FILE"
+				INITRD_IMG="pxe_menu/$LABEL/$INITRD_FILE"
 				cp "/mnt/$boot_path/$KERNEL_FILE" "/srv/pxe/$KERNEL_IMG"
 				cp "/mnt/$boot_path/$INITRD_FILE" "/srv/pxe/$INITRD_IMG"
 				chmod 644 "/srv/pxe/$KERNEL_IMG"
@@ -208,7 +208,7 @@ EOF
 		"$IPXE_HEADER" \
 		"$IPXE_MENU" \
 		"$IPXE_CONTENTS" \
-		> /srv/pxe/bootentries/menu.ipxe
+		> /srv/pxe/pxe_menu/menu.ipxe
 	rm -f /tmp/partial.ipxe.*.tmp
 
 	echo "Found $entries_found boot entries"
@@ -216,13 +216,13 @@ EOF
 }
 
 reload_service() {
-	config_load bootentries
-	config_foreach validate_bootentries_section bootentries bootentries_config
+	config_load pxe_menu
+	config_foreach validate_pxe_menu_section pxe_menu pxe_menu_config
 }
 
 service_triggers() {
-	procd_add_reload_trigger "bootentries"
-	procd_add_validation validate_bootentries_section
+	procd_add_reload_trigger "pxe_menu"
+	procd_add_validation validate_pxe_menu_section
 }
 
 start_service() {

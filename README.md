@@ -20,7 +20,7 @@ git clone https://github.com/jwmullally/iscsi-target-ramdisk.git
 cd iscsi-target-ramdisk
 
 # Change boot_partition, boot_path and cmdline_default
-gedit rootfs/etc/uci-defaults/90-bootentries
+gedit rootfs/etc/uci-defaults/90-pxe_menu
 # Change tgt.1_1.device
 gedit rootfs/etc/uci-defaults/85-tgt
 
@@ -84,7 +84,7 @@ Review and adjust the configuration files in this project to match your system.
 
 You'll mainly just want to update:
 
-* [`rootfs/etc/uci-defaults/90-bootentries`](rootfs/etc/uci-defaults/90-bootentries)
+* [`rootfs/etc/uci-defaults/90-pxe_menu`](rootfs/etc/uci-defaults/90-pxe_menu)
 
   * `boot_partition`
 
@@ -205,7 +205,7 @@ git clone https://github.com/jwmullally/iscsi-target-ramdisk.git
 cd iscsi-target-ramdisk
 
 # Change boot_partition, boot_path and cmdline_default
-nano rootfs/etc/uci-defaults/90-bootentries
+nano rootfs/etc/uci-defaults/90-pxe_menu
 # Change tgt.1_1.device
 nano rootfs/etc/uci-defaults/85-tgt
 
@@ -424,9 +424,9 @@ It's important that the BOOTIF interface stay running as the root filesystem can
 
 On the OpenWrt target:
 
-* Check `/srv/pxe/bootentries/menu.ipxe` and `/srv/pxe/bootentries` contain the expected kernels.
+* Check `/srv/pxe/pxe_menu/menu.ipxe` and `/srv/pxe/pxe_menu` contain the expected kernels.
 
-  * Update `/etc/config/bootentries` and rerun `/etc/init.d/bootentries restart` to try find them again.
+  * Update `/etc/config/pxe_menu` and rerun `/etc/init.d/pxe_menu restart` to try find them again.
 
 * Use `logread -f` to keep an eye on the DHCP and TFTP requests.
 
@@ -434,7 +434,7 @@ On the OpenWrt target:
 
 * Check the console or `dmesg` output for Ethernet interface corruption warnings (e.g. some `e1000e` models have flaky offloading that needs to be disabled with `ethtool`.)
 
-* To set breakpoints during initrd, change `/etc/config/bootentries` `cmdline_iscsi` to include `rd.shell` or `rd.break=...`. See `dracut.cmdline(7)` for the list of break points.
+* To set breakpoints during initrd, change `/etc/config/pxe_menu` `cmdline_iscsi` to include `rd.shell` or `rd.break=...`. See `dracut.cmdline(7)` for the list of break points.
 
 On the initiator PXE boot menu:
 
@@ -452,8 +452,8 @@ On the initiator:
 On the target host (containing the OS to remote boot):
 
 * `iSCSI Target Ramdisk` boots with its own kernel and stateless initramfs.
-* [`/etc/init.d/bootentries`](rootfs/etc/init.d/bootentries) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/pxe/bootentries` and creates entries in `/srv/pxe/bootentries/menu.ipxe`.
-  * Configuration: [`/etc/uci-defaults/90-bootentries`](rootfs/etc/uci-defaults/90-bootentries).
+* [`/etc/init.d/pxe_menu`](rootfs/etc/init.d/pxe_menu) is run which discovers the OS kernel images from the `/boot` partition, copies them to `/srv/pxe/pxe_menu` and creates entries in `/srv/pxe/pxe_menu/menu.ipxe`.
+  * Configuration: [`/etc/uci-defaults/90-pxe_menu`](rootfs/etc/uci-defaults/90-pxe_menu).
   * If `/boot/loader/entries` is found, all BootLoaderSpec files are parsed to identify kernel images and cmdline arguments. If not found, entries are created for all kernels matching `/boot/vmlinuz-*` along with their matching initramfs file and the `cmdline_default` arguments.
   * The contents of `cmdline_iscsi` are appended to the cmdline, which include the `netroot:iscsi:...` paramaters.
 * `/etc/init.d/tgt` starts which exports the disk block devices as iSCSI LUN targets.
@@ -464,7 +464,7 @@ On the target host (containing the OS to remote boot):
   * Configuration: [`/etc/uci-defaults/90-dhcp`](rootfs/etc/uci-defaults/90-dhcp).
 * `/etc/init.d/uhttpd` starts and serves `/srv/pxe` via HTTP access.
   * Configuration: [`/etc/uci-defaults/95-uhttpd`](rootfs/etc/uci-defaults/95-uhttpd).
-  * HTTP BASIC authentication is used to protect `/srv/pxe/bootentries` and `/srv/pxe/cgi-bin` containing the boot images and configuration.
+  * HTTP BASIC authentication is used to protect `/srv/pxe/pxe_menu` and `/srv/pxe/cgi-bin` containing the boot images and configuration.
   * The [`/etc/init.d/pxe_access`](rootfs/etc/init.d/pxe_access) service can be used to enable/disable access to these files.
 * [`/etc/init.d/dhcpfallback`](rootfs/etc/init.d/dhcpfallback) starts, which sets LAN to a static IP if no existing DHCP servers were found during the specified time frame.
   * If activated, `/etc/config/dhcp` is also changed from PXE DHCP Proxy mode back to regular DHCP server mode.
@@ -479,7 +479,7 @@ On the initiator host (the one to run the OS on):
   * Caution: Boot files and iSCSI credentials can still be sniffed as they are transferred over the network. Only use on a physically secure network or direct connection.
 * iPXE chainloads [`/srv/pxe/cgi-bin/get-menu-ipxe`](rootfs/srv/pxe/cgi-bin/get-menu-ipxe) over HTTP.
   * iSCSI access for the requesting initiator host's IP address is allowed through the firewall.
-  * `/srv/pxe/bootentries/menu.ipxe` is returned and executed by iPXE.
+  * `/srv/pxe/pxe_menu/menu.ipxe` is returned and executed by iPXE.
 * (Optional, default) The iSCSI target connection details are stored in the iBFT ACPI table.
 * The user selects a kernel to boot.
 * iPXE fetches the kernel and associated initramfs over HTTP.

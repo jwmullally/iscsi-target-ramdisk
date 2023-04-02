@@ -5,14 +5,14 @@ echo "Content-Type: text/plain"
 echo
 
 if [ -n "$REMOTE_ADDR" ]; then
-	logger -p notice -t bootentries "Allowing iSCSI access for $REMOTE_ADDR"
+	logger -p notice -t pxe_menu "Allowing iSCSI access for $REMOTE_ADDR"
 	echo -e "\nAllowing iSCSI access for $REMOTE_ADDR\n" > /dev/console
 	uci -q delete firewall.block_iscsi.src_ip
 	uci -q add_list firewall.block_iscsi.src_ip="!$REMOTE_ADDR"
 	uci -q commit firewall
 	/etc/init.d/firewall reload > /dev/null 2>&1
 
-	cat /srv/pxe/bootentries/menu.ipxe
+	cat /srv/pxe/pxe_menu/menu.ipxe
 	exit
 fi
 echo "echo $(uci get system.@system[0].hostname): cgi-bin ERROR"
