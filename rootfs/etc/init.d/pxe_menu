@@ -55,7 +55,6 @@ set boot-url http://\${username:uristring}:\${password:uristring}@\${target-serv
 chain \${boot-url}cgi-bin/get-menu-ipxe
 EOF
 
-	rm -rf /srv/pxe/pxe_menu
 	mkdir /srv/pxe/pxe_menu
 
 	IPXE_HEADER="/tmp/partial.ipxe.header.tmp"
@@ -76,6 +75,7 @@ EOF
 
 	cat > "$IPXE_CONTENTS" <<EOF
 item --gap --             ------------------------- Advanced options -------------------------------
+item reload               Reload boot menu
 item config               Configure settings
 item shell                Drop to iPXE shell
 item reboot               Reboot computer
@@ -103,11 +103,14 @@ exit
 config
 goto start
 
+:reload
+chain --replace \${boot-url}cgi-bin/reload-menu-ipxe || goto failed
+
 # Boot entries
 EOF
 
 	entries_found="0"
-	umount /mnt || true
+	umount /mnt 2> /dev/null || true
 
 	if [ -n "$boot_partition" ]; then
 		mount -o ro "$boot_partition" /mnt || error_exit "Unable to mount boot_partition: $boot_partition"
@@ -136,6 +139,11 @@ EOF
 			
 					echo -e "" >> "$IPXE_CONTENTS"
 					echo -e ":$LABEL" >> "$IPXE_CONTENTS"
+					if [ "$ibft" = "1" ]; then
+						echo -e "set return_from_ibft ${LABEL}_ibft_return" >> "$IPXE_CONTENTS"
+						echo -e "goto ibft" >> "$IPXE_CONTENTS"
+						echo -e ":${LABEL}_ibft_return" >> "$IPXE_CONTENTS"
+					fi
 					echo -e "kernel \${boot-url}$KERNEL_IMG" >> "$IPXE_CONTENTS"
 					echo -e "initrd \${boot-url}$INITRD_IMG" >> "$IPXE_CONTENTS"
 					echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $OPTIONS $cmdline_iscsi" >> "$IPXE_CONTENTS"
@@ -169,6 +177,11 @@ EOF
 		
 				echo -e "" >> "$IPXE_CONTENTS"
 				echo -e ":$LABEL" >> "$IPXE_CONTENTS"
+				if [ "$ibft" = "1" ]; then
+					echo -e "set return_from_ibft ${LABEL}_ibft_return" >> "$IPXE_CONTENTS"
+					echo -e "goto ibft" >> "$IPXE_CONTENTS"
+					echo -e ":${LABEL}_ibft_return" >> "$IPXE_CONTENTS"
+				fi
 				echo -e "kernel \${boot-url}$KERNEL_IMG" >> "$IPXE_CONTENTS"
 				echo -e "initrd \${boot-url}$INITRD_IMG" >> "$IPXE_CONTENTS"
 				echo -e "imgargs $KERNEL_FILE initrd=$INITRD_FILE $cmdline_default $cmdline_iscsi" >> "$IPXE_CONTENTS"
@@ -181,11 +194,13 @@ EOF
 	fi
 
 	if [ "$ibft" = "1" ]; then
-		echo -e "set initiator-iqn $(uci get tgt.1.allow_name)" >> "$IPXE_HEADER"
-		echo -e "set username $(uci get tgt.user_in.user)" >> "$IPXE_HEADER"
-		echo -e "set password $(uci get tgt.user_in.password)" >> "$IPXE_HEADER"
-		echo -e "set reverse-username $(uci get tgt.user_out.user)" >> "$IPXE_HEADER"
-		echo -e "set reverse-password $(uci get tgt.user_out.password)" >> "$IPXE_HEADER"
+		echo -e "" >> "$IPXE_CONTENTS"
+		echo -e ":ibft" >> "$IPXE_CONTENTS"
+		echo -e "set initiator-iqn $(uci get tgt.1.allow_name)" >> "$IPXE_CONTENTS"
+		echo -e "set username $(uci get tgt.user_in.user)" >> "$IPXE_CONTENTS"
+		echo -e "set password $(uci get tgt.user_in.password)" >> "$IPXE_CONTENTS"
+		echo -e "set reverse-username $(uci get tgt.user_out.user)" >> "$IPXE_CONTENTS"
+		echo -e "set reverse-password $(uci get tgt.user_out.password)" >> "$IPXE_CONTENTS"
 
 		lun_idx=0
 		drive_idx="$(printf "%i" "0x80")"
@@ -194,12 +209,16 @@ EOF
 			target_uri="iscsi:\${target-server-ip}:::$lun_idx:$(uci get tgt.1.name)"
 			drive="$(printf "%x" "$drive_idx")"
 			drive_idx=$((drive_idx+1));
-			echo "sanhook --drive 0x$drive $target_uri" >> "$IPXE_HEADER"
+			echo "sanhook --drive 0x$drive $target_uri || goto failed" >> "$IPXE_CONTENTS"
 		done
+		echo -e "goto \${return_from_ibft}" >> "$IPXE_CONTENTS"
 
 		echo -e "item sanboot iBFT SAN boot" >> "$IPXE_MENU"
 		echo -e "" >> "$IPXE_CONTENTS"
 		echo -e ":sanboot" >> "$IPXE_CONTENTS"
+		echo -e "set return_from_ibft sanboot_ibft_return" >> "$IPXE_CONTENTS"
+		echo -e "goto ibft" >> "$IPXE_CONTENTS"
+		echo -e ":sanboot_ibft_return" >> "$IPXE_CONTENTS"
 		echo -e "sanboot || goto failed" >> "$IPXE_CONTENTS"
 		echo -e "goto start" >> "$IPXE_CONTENTS"
 	fi
@@ -216,6 +235,7 @@ EOF
 }
 
 reload_service() {
+	stop_service
 	config_load pxe_menu
 	config_foreach validate_pxe_menu_section pxe_menu pxe_menu_config
 }
@@ -227,4 +247,9 @@ service_triggers() {
 
 start_service() {
 	reload_service
+}
+
+stop_service() {
+	rm -f /srv/pxe/tftp/ipxe/entry.ipxe
+	rm -rf /srv/pxe/pxe_menu
 }

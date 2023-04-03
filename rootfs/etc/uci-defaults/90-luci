@@ -18,6 +18,10 @@ set luci.cmd_pxe_disable.command='/etc/init.d/pxe_access stop'
 set luci.cmd_pxe_disable.public='1'
 
 add luci command
+set luci.@command[-1].name='Reload PXE menu'
+set luci.@command[-1].command='/etc/init.d/pxe_menu reload'
+
+add luci command
 set luci.@command[-1].name='Linux iSCSI Initiator Script'
 set luci.@command[-1].command='/srv/pxe/cgi-bin/iscsistart.sh'
 

@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+
+/etc/init.d/pxe_menu reload > /dev/null 2>&1
+/srv/pxe/cgi-bin/get-menu-ipxe
