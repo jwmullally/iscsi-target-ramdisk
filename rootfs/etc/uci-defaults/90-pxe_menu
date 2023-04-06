@@ -73,4 +73,44 @@ uci set pxe_menu.@pxe_menu[0].menu_title="$(uci get system.@system[0].hostname) 
 uci set pxe_menu.@pxe_menu[0].menu_username='pxe'
 uci set pxe_menu.@pxe_menu[0].menu_password='pass1234'
 
+# Static menu sections
+uci add pxe_menu static
+uci set pxe_menu.@static[-1].label='sanboot'
+uci set pxe_menu.@static[-1].title='iBFT SAN boot'
+uci set pxe_menu.@static[-1].section='os'
+uci set pxe_menu.@static[-1].use_ibft='1'
+uci add_list pxe_menu.@static[-1].commands='sanboot || goto failed'
+
+uci add pxe_menu static
+uci set pxe_menu.@static[-1].label='reload'
+uci set pxe_menu.@static[-1].title='Reload boot menu'
+uci set pxe_menu.@static[-1].section='options'
+uci add_list pxe_menu.@static[-1].commands='chain --replace ${boot-url}cgi-bin/reload-menu-ipxe || goto failed'
+
+uci add pxe_menu static
+uci set pxe_menu.@static[-1].label='config'
+uci set pxe_menu.@static[-1].title='Configure settings'
+uci set pxe_menu.@static[-1].section='options'
+uci add_list pxe_menu.@static[-1].commands='config'
+
+uci add pxe_menu static
+uci set pxe_menu.@static[-1].label='shell'
+uci set pxe_menu.@static[-1].title='Drop to iPXE shell'
+uci set pxe_menu.@static[-1].section='options'
+uci add_list pxe_menu.@static[-1].commands='echo Type "exit" to get the back to the menu'
+uci add_list pxe_menu.@static[-1].commands='shell'
+
+uci add pxe_menu static
+uci set pxe_menu.@static[-1].label='reboot'
+uci set pxe_menu.@static[-1].title='Reboot computer'
+uci set pxe_menu.@static[-1].section='options'
+uci add_list pxe_menu.@static[-1].commands='reboot'
+
+uci add pxe_menu static
+uci set pxe_menu.@static[-1].label='exit'
+uci set pxe_menu.@static[-1].title='Exit iPXE and continue BIOS boot'
+uci set pxe_menu.@static[-1].section='options'
+uci add_list pxe_menu.@static[-1].commands='exit'
+
+# Commit settings
 uci commit pxe_menu

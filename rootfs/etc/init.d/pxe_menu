@@ -18,12 +18,10 @@ wait_for_lan_ipaddr() {
 	done
 }
 
-
 error_exit() {
 	echo "Error: " "$*"
 	exit 1
 }
-
 
 validate_pxe_menu_section() {
 	uci_load_validate pxe_menu pxe_menu "$1" "$2" \
@@ -58,7 +56,8 @@ EOF
 	mkdir /srv/pxe/pxe_menu
 
 	IPXE_HEADER="/tmp/partial.ipxe.header.tmp"
-	IPXE_MENU="/tmp/partial.ipxe.menu.tmp"
+	IPXE_MENU_OS="/tmp/partial.ipxe.menu.tmp"
+	IPXE_MENU_OPTIONS="/tmp/partial.ipxe.menu_options.tmp"
 	IPXE_CONTENTS="/tmp/partial.ipxe.contents.tmp"
 
 	cat > "$IPXE_HEADER" <<EOF
@@ -66,47 +65,25 @@ EOF
 
 EOF
 
-	cat > "$IPXE_MENU" <<EOF
-
+	cat > "$IPXE_MENU_OS" <<EOF
 :start
 menu $menu_title
-item --gap --             ------------------------- Operating systems ------------------------------
+item --gap --             --------------------------- Operating Systems ----------------------------
+EOF
+
+	cat > "$IPXE_MENU_OPTIONS" <<EOF
+item --gap --             -------------------------------- Options ---------------------------------
 EOF
 
 	cat > "$IPXE_CONTENTS" <<EOF
-item --gap --             ------------------------- Advanced options -------------------------------
-item reload               Reload boot menu
-item config               Configure settings
-item shell                Drop to iPXE shell
-item reboot               Reboot computer
-item
-item exit                 Exit iPXE and continue BIOS boot
-choose selected || goto shell
+choose selected || goto failed
 goto \${selected}
 
-:shell
-echo Type 'exit' to get the back to the menu
+:failed
+echo Last action failed, dropping to shell
 shell
 goto start
 
-:failed
-echo Booting failed, dropping to shell
-goto shell
-
-:reboot
-reboot
-
-:exit
-exit
-
-:config
-config
-goto start
-
-:reload
-chain --replace \${boot-url}cgi-bin/reload-menu-ipxe || goto failed
-
-# Boot entries
 EOF
 
 	entries_found="0"
@@ -135,7 +112,7 @@ EOF
 					cp "/mnt/$boot_path/$INITRD_PATH" "/srv/pxe/$INITRD_IMG"
 					chmod 644 "/srv/pxe/$KERNEL_IMG"
 					chmod 644 "/srv/pxe/$INITRD_IMG"
-					echo -e "item $LABEL $TITLE" >> "$IPXE_MENU"
+					echo -e "item $LABEL $TITLE" >> "$IPXE_MENU_OS"
 			
 					echo -e "" >> "$IPXE_CONTENTS"
 					echo -e ":$LABEL" >> "$IPXE_CONTENTS"
@@ -173,7 +150,7 @@ EOF
 				cp "/mnt/$boot_path/$INITRD_FILE" "/srv/pxe/$INITRD_IMG"
 				chmod 644 "/srv/pxe/$KERNEL_IMG"
 				chmod 644 "/srv/pxe/$INITRD_IMG"
-				echo -e "item $LABEL $LABEL" >> "$IPXE_MENU"
+				echo -e "item $LABEL $LABEL" >> "$IPXE_MENU_OS"
 		
 				echo -e "" >> "$IPXE_CONTENTS"
 				echo -e ":$LABEL" >> "$IPXE_CONTENTS"
@@ -212,26 +189,55 @@ EOF
 			echo "sanhook --drive 0x$drive $target_uri || goto failed" >> "$IPXE_CONTENTS"
 		done
 		echo -e "goto \${return_from_ibft}" >> "$IPXE_CONTENTS"
-
-		echo -e "item sanboot iBFT SAN boot" >> "$IPXE_MENU"
-		echo -e "" >> "$IPXE_CONTENTS"
-		echo -e ":sanboot" >> "$IPXE_CONTENTS"
-		echo -e "set return_from_ibft sanboot_ibft_return" >> "$IPXE_CONTENTS"
-		echo -e "goto ibft" >> "$IPXE_CONTENTS"
-		echo -e ":sanboot_ibft_return" >> "$IPXE_CONTENTS"
-		echo -e "sanboot || goto failed" >> "$IPXE_CONTENTS"
-		echo -e "goto start" >> "$IPXE_CONTENTS"
 	fi
+
+	config_foreach validate_static_section static static_config
 
 	cat \
 		"$IPXE_HEADER" \
-		"$IPXE_MENU" \
+		"$IPXE_MENU_OS" \
+		"$IPXE_MENU_OPTIONS" \
 		"$IPXE_CONTENTS" \
 		> /srv/pxe/pxe_menu/menu.ipxe
 	rm -f /tmp/partial.ipxe.*.tmp
 
 	echo "Found $entries_found boot entries"
 	echo -e "\nFound $entries_found boot entries for PXE menu\n" > /dev/console
+}
+
+validate_static_section() {
+	uci_load_validate pxe_menu static "$1" "$2" \
+		'section:or("os", "options"):os' \
+		'label:string' \
+		'title:string' \
+		'use_ibft:bool:0' \
+		'commands:list(string)'
+}
+
+static_config() {
+	config="$1"
+
+	case "$section" in
+		"os")
+			echo -e "item $label $title" >> "$IPXE_MENU_OS"
+			;;
+		"options")
+			echo -e "item $label $title" >> "$IPXE_MENU_OPTIONS"
+			;;
+	esac
+	echo -e "" >> "$IPXE_CONTENTS"
+	echo -e ":$label" >> "$IPXE_CONTENTS"
+	if [ "$ibft" = "1" -a "$use_ibft" = "1" ]; then
+		echo -e "set return_from_ibft ${label}_ibft_return" >> "$IPXE_CONTENTS"
+		echo -e "goto ibft" >> "$IPXE_CONTENTS"
+		echo -e ":${label}_ibft_return" >> "$IPXE_CONTENTS"
+	fi
+	config_list_foreach "$config" commands static_config_handle_commands
+	echo -e "goto start" >> "$IPXE_CONTENTS"
+}
+
+static_config_handle_commands() {
+	echo "$1" >> "$IPXE_CONTENTS"
 }
 
 reload_service() {
