@@ -96,8 +96,12 @@ keys:
 	ssh-keygen -N "" -t ed25519 -b 256 -f rootfs/etc/dropbear/dropbear_ed25519_host_key
 	
 
-passwords:
-	# TODO: Password rotation
+qemu:
+	test/qemu.sh
+
+
+qemu-pxe:
+	test/qemu-pxe.sh
 
 
 clean:

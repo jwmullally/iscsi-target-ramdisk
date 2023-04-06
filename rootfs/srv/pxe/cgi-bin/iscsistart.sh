@@ -23,5 +23,6 @@ iscsistart \\
 	--username_in="$(uci get tgt.user_out.user)" \\
 	--password_in="$(uci get tgt.user_out.password)"
 
+iscsiadm --mode session --print 3
 
 EOF

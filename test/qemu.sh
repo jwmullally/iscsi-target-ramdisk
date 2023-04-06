@@ -31,5 +31,3 @@ exec qemu-system-x86_64 \
     -drive file=build/vm/vdb.qcow2,format=qcow2,if=virtio \
     -append "console=ttyS0"
 
-
-#    -nic user,model=virtio \

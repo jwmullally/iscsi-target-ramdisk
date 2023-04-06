@@ -67,7 +67,7 @@ If the initiator computer doesn't have network ports, you can also boot via an [
 
 Try this out first with the VM images in [`test`](test) to see how it works.
 
-*!! This solution makes slight changes to your `/boot` files. Before continuing, ensure you have a backup bootdisk/CD/USB in case anything goes wrong.*
+*!! This solution makes slight changes to your `/boot` files. Before continuing, make sure you have a bootable LiveCD in case anything goes wrong.*
 
 *!! Currently there is NO ENCRYPTION for the iSCSI endpoint. See TODO below. For now, only run this on a trusted network with trusted hosts. Even if your main root partition is encrypted (e.g. with LUKS), MITM attacks are still be possible on the boot files.*
 
