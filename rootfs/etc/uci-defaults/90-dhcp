@@ -23,6 +23,11 @@ set dhcp.lan.limit='8'
 set dhcp.lan.force='0'
 set dhcp.lan.ignore='0'
 
+# Provide no default route/gateway to the initiator host to let it handle
+# its own network connections and routing.
+# If you want to route packets through the target host, remove this option.
+add_list dhcp.lan.dhcp_option='option:router'
+
 # Start in dnsmasq DHCP Proxy mode by default, for use with existing DHCP servers.
 # Will be set back to '0' by /etc/init.d/dhcpfallback if no existing DHCP server
 # is found.
