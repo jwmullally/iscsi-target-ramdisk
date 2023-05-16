@@ -1,7 +1,7 @@
 ALL_CURL_OPTS := $(CURL_OPTS) -L --fail
 
 #VERSION := 22.03-SNAPSHOT
-VERSION := 22.03.3
+VERSION := 22.03.5
 BOARD := x86
 SUBTARGET := 64
 BUILDER := openwrt-imagebuilder-$(VERSION)-$(BOARD)-$(SUBTARGET).Linux-x86_64
