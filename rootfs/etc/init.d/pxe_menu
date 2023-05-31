@@ -119,7 +119,11 @@ EOF
 		if [ -d "/mnt/$boot_path/loader/entries" ]; then
 			echo "Searching for BootLoaderSpec files in /mnt/$boot_path/loader/entries ..."
 			# Create an menu entry for every BootLoaderSpec file
-			for entry in "/mnt/$boot_path/loader/entries"/*.conf; do
+			for entry_file in $(ls -t "/mnt/$boot_path/loader/entries"); do
+				entry="/mnt/$boot_path/loader/entries/$entry_file"
+				if [ ! -f "$entry"  ]; then
+					continue
+				fi
 				TITLE="$(sed -n 's/^title[ \t]*\(.*\)/\1/p' $entry)"
 				KERNEL_PATH="$(sed -n 's/^linux[ \t]*\(.*\)/\1/p' $entry)"
 				INITRD_PATH="$(sed -n 's/^initrd[ \t]*\(.*\)/\1/p' $entry)"
@@ -236,8 +240,7 @@ EOF
 
 reload_service() {
 	stop_service
-	config_load pxe_menu
-	config_foreach validate_pxe_menu_section pxe_menu pxe_menu_config
+	start_service
 }
 
 service_triggers() {
@@ -246,7 +249,8 @@ service_triggers() {
 }
 
 start_service() {
-	reload_service
+	config_load pxe_menu
+	config_foreach validate_pxe_menu_section pxe_menu pxe_menu_config
 }
 
 stop_service() {
