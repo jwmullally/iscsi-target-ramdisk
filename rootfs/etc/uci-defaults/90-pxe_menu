@@ -65,8 +65,8 @@ systemd.mask=hibernate.target \
 # systemd.mask=hibernate.target \
 # "
 
-# Remove these from any found cmdlines (TODO)
-uci set pxe_menu.@pxe_menu[0].cmdline_remove="quiet"
+# Filter the kernel cmdline/options with this sed expression
+uci set pxe_menu.@pxe_menu[0].cmdline_sed="s/ quiet//g"
 
 # PXE menu settings
 uci set pxe_menu.@pxe_menu[0].menu_title="$(uci get system.@system[0].hostname) - PXE Boot Menu"

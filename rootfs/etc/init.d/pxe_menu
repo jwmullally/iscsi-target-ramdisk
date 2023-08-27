@@ -32,7 +32,7 @@ validate_pxe_menu_section() {
 		'ibft:bool:0' \
 		'cmdline_default:string' \
 		'cmdline_iscsi:string' \
-		'cmdline_remove:string' \
+		'cmdline_sed:string' \
 		'menu_title:string:iSCSI Target Ramdisk PXE Boot Menu' \
 		'menu_username:string' \
 		'menu_password:string'
@@ -127,7 +127,7 @@ EOF
 				TITLE="$(sed -n 's/^title[ \t]*\(.*\)/\1/p' $entry)"
 				KERNEL_PATH="$(sed -n 's/^linux[ \t]*\(.*\)/\1/p' $entry)"
 				INITRD_PATH="$(sed -n 's/^initrd[ \t]*\(.*\)/\1/p' $entry)"
-				OPTIONS="$(sed -n 's/^options[ \t]*\(.*\)/\1/p' $entry | sed 's/ quiet//g')"
+				OPTIONS="$(sed -n 's/^options[ \t]*\(.*\)/\1/p' $entry | sed "$cmdline_sed")"
 				if [ -n "$TITLE" -a -n "$KERNEL_PATH" -a -n "$INITRD_PATH" ]; then
 					LABEL="$(basename "$entry")"
 					mkdir -p "/srv/pxe/pxe_menu/$LABEL"
@@ -225,6 +225,8 @@ EOF
 		echo -e ":sanboot_ibft_return" >> "$IPXE_CONTENTS"
 		echo -e "sanboot || goto failed" >> "$IPXE_CONTENTS"
 		echo -e "goto start" >> "$IPXE_CONTENTS"
+
+		entries_found="$((entries_found+1))"
 	fi
 
 	cat \
