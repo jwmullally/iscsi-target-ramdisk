@@ -176,6 +176,58 @@ mv /boot/initramfs-$(uname -r).img /boot/initramfs-linux.img
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
+## Installation on FreeBSD
+
+Enable iSCSI Boot:
+```
+# pkg install net/isboot-kmod
+git clone https://github.com/jnielsendotnet/isboot.git
+cd isboot/src
+make
+make install
+cat > /boot/loader.conf.d/isboot.conf <<EOF
+isboot_load="YES"
+EOF
+```
+
+Build `iscsi-target-ramdisk.efi`:
+```
+pkg install sysutils/debootstrap
+kldload linux64 fdescfs linprocfs linsysfs tmpfs
+mkdir debian_build
+cd debian_build
+mkdir dev proc sys tmp
+mount -t linprocfs none `pwd`/proc
+mount -t devfs none `pwd`/dev
+mount -t linsysfs none `pwd`/sys
+mount -t tmpfs none `pwd`/tmp
+debootstrap bullseye . http://deb.debian.org/debian
+chroot . /bin/bash
+cd /root
+git clone https://github.com/jwmullally/iscsi-target-ramdisk.git
+cd iscsi-target-ramdisk
+
+# Set boot_partition="" to skip Linux kernel detection
+vi rootfs/etc/uci-defaults/90-pxe_menu
+# Change tgt.1_1.device to discover disks using GPT UUID
+vi rootfs/etc/uci-defaults/85-tgt
+
+dependencies/debian/build.sh
+make images
+make efi
+exit
+```
+
+Install `iscsi-target-ramdisk.efi`:
+```
+mkdir /boot/efi/EFI/iscsi-target-ramdisk
+cp debian_build/root/iscsi-target-ramdisk/build/images/iscsi-target-ramdisk.efi /boot/efi/EFI/iscsi-target-ramdisk
+efibootmgr -a -c -l /boot/efi/EFI/iscsi-target-ramdisk/iscsi-target-ramdisk.efi -L iscsi-target-ramdisk
+```
+
+(TODO: Don't make new efibootmgr the default. Instructions for disabling DHCP on iBFT booting interface.)
+
+
 ## Installation on Windows 10
 
 Windows is a little more complicated and requires these steps to be done to prepare it for remote iSCSI boot:
@@ -204,7 +256,7 @@ Download, configure and build `iscsi-target-ramdisk.efi`:
 git clone https://github.com/jwmullally/iscsi-target-ramdisk.git
 cd iscsi-target-ramdisk
 
-# Change boot_partition, boot_path and cmdline_default
+# Set boot_partition="" to skip Linux kernel detection
 nano rootfs/etc/uci-defaults/90-pxe_menu
 # Change tgt.1_1.device
 nano rootfs/etc/uci-defaults/85-tgt
@@ -278,7 +330,7 @@ mountvol S: /d
 
 ### Configure the iSCSI Target
 
-Preparing an existing regular Windows 10 installation: For iSCSI boot to work, a persistent iSCSI connection to the target must already be configured. When Windows is booting normally, this iSCSI connection will be disconnected and unused.
+To prepare an existing regular Windows 10 installation for iSCSI boot, a persistent iSCSI connection to the target must be configured. When Windows is booted normally from local storage, this iSCSI connection will stay disconnected and unused.
 
 * Temporarily boot the image/ISO/USB on another system connected directly via Ethernet.
 
@@ -307,7 +359,19 @@ Get-NetIPAddress | Where-Object {$_.InterfaceAlias -eq "vEthernet (InternalSwitc
 
   * Warning: This will overwrite your existing Windows iSCSI Initiator Name and Reverse CHAP Secret. To preserve them, set them first in `/etc/config/tgt` to match your existing Windows settings.
 
-  * (Alternatively, copy + paste the commands from <http://192.168.200.1:81/cgi-bin/iscsi-windows.ps1> into an Administrator Powershell), or use the following example:
+  * Initiator name: `target` -> `<allow_name>`.
+
+  * iSCSI Initiator Mutual CHAP Secret: `user_out` -> `<password>`.
+
+  * Quick Connect Target: `192.168.200.1`.
+
+  * Connect -> Advanced Options -> Enable CHAP log on: Name, Target secret = `"user_in"` -> `<user>`, `<password>`.
+
+  * Perform mutual authentication: Enabled.
+
+  * Add this connection to the list of Favorite Targets: Enabled.
+
+* Or alternatively, copy + paste the commands from <http://192.168.200.1:81/cgi-bin/iscsi-windows.ps1> into an Administrator Powershell), or use the following example:
 
 ```ps1
 Start-Service -Name MSiSCSI
@@ -334,18 +398,6 @@ Connect-IscsiTarget `
 Update-HostStorageCache
 Get-Disk
 ```  
-
-  * Initiator name: `target` -> `<allow_name>`.
-
-  * iSCSI Initiator Mutual CHAP Secret: `user_out` -> `<password>`.
-
-  * Quick Connect Target: `192.168.200.1`.
-
-  * Connect -> Advanced Options -> Enable CHAP log on: Name, Target secret = `"user_in"` -> `<user>`, `<password>`.
-
-  * Perform mutual authentication: Enabled.
-
-  * Add this connection to the list of Favorite Targets: Enabled.
 
 ### Install the initiator NIC driver and devices
 
