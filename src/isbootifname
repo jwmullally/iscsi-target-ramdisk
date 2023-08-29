@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# $FreeBSD$
+#
+
+# PROVIDE: isbootifname
+# BEFORE: dhclient netif
+# KEYWORD: nojail
+
+. /etc/rc.subr
+
+name="isbootifname"
+rcvar="isbootifname_enable"
+
+start_cmd="${name}_start"
+stop_cmd=":"
+
+load_rc_config $name 
+: ${isbootifname_enable:=yes}
+
+isbootifname_start()
+{
+	_isboot_nic="$(sysctl -bi net.isboot.nic)"
+	if [ -n "$_isboot_nic" ]; then
+		echo "${name}: Renaming interface ${_isboot_nic} to bootnet0"
+		ifconfig "${_isboot_nic}" name "bootnet0"
+	fi
+}
+
+run_rc_command "$1"

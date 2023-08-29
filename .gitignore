@@ -2,4 +2,4 @@ build/
 rootfs/etc/dropbear/
 .vscode
 *.swp
-notes
+/notes

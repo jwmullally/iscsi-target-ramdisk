@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project adds a preconfigured x86_64 OpenWrt ramdisk image to your boot menu that automatically serves your Linux kernels via PXE and storage via iSCSI, allowing you to PXE boot your regular OS over the network on another computer using Dracut `netroot=iscsi:...`. Windows iSCSI SAN boot is also supported.
+This project adds a preconfigured x86_64 OpenWrt ramdisk image to your boot menu that automatically serves your Linux kernels via PXE and storage via iSCSI, allowing you to PXE boot your regular OS over the network on another computer using Dracut `netroot=iscsi:...`. Windows and FreeBSD iSCSI SAN boot are also supported.
 
 For example, you can run your laptop OS on your more powerful desktop while still having access to all your laptop's files and programs.
 
@@ -56,7 +56,7 @@ If the initiator computer doesn't have network ports, you can also boot via an [
 
   * Tested on: Debian 11, Ubuntu 22.04, Fedora 36, Fedora Silverblue 36 and Arch Linux 2022.06.01.
 
-* Also verified to work with: Windows 10
+* Also verified to work with: Windows 10, FreeBSD 13.1.
 
 * BIOS/UEFI PXE Boot.
 
@@ -178,6 +178,10 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 ## Installation on FreeBSD
 
+These instructions are for UEFI BIOS, MBR is TODO.
+
+Ensure you are using `/dev/gpt/*` labels in `/etc/fstab`, as device names will be different on different hosts. You can use `gpart modify -l` to set them. See [here](https://forums.freebsd.org/threads/labeling-partitions-done-right-on-modern-computers.69250/) for details on how to do this.
+
 Enable iSCSI Boot:
 ```
 # pkg install net/isboot-kmod
@@ -194,6 +198,7 @@ Build `iscsi-target-ramdisk.efi`:
 ```
 pkg install sysutils/debootstrap
 kldload linux64 fdescfs linprocfs linsysfs tmpfs
+service linux onestart
 mkdir debian_build
 cd debian_build
 mkdir dev proc sys tmp
@@ -203,6 +208,9 @@ mount -t linsysfs none `pwd`/sys
 mount -t tmpfs none `pwd`/tmp
 debootstrap bullseye . http://deb.debian.org/debian
 chroot . /bin/bash
+chmod 777 /tmp
+apt update
+apt install git
 cd /root
 git clone https://github.com/jwmullally/iscsi-target-ramdisk.git
 cd iscsi-target-ramdisk
@@ -225,7 +233,15 @@ cp debian_build/root/iscsi-target-ramdisk/build/images/iscsi-target-ramdisk.efi 
 efibootmgr -a -c -l /boot/efi/EFI/iscsi-target-ramdisk/iscsi-target-ramdisk.efi -L iscsi-target-ramdisk
 ```
 
-(TODO: Don't make new efibootmgr the default. Instructions for disabling DHCP on iBFT booting interface.)
+This will add the `iscsi-target-ramdisk` to your UEFI boot entries as the default. You should later change the boot order back to your main OS.
+
+Disable DHCP for iSCSI Boot network interface:
+```
+install -m 0755 -T debian_build/root/iscsi-target-ramdisk/src/isbootifname /usr/local/etc/rc.d/isbootifname
+sysrc ifconfig_bootnet0="NOAUTO"
+```
+
+Now your system should be ready for remote boot.
 
 
 ## Installation on Windows 10
