@@ -206,9 +206,10 @@ mount -t linprocfs none `pwd`/proc
 mount -t devfs none `pwd`/dev
 mount -t linsysfs none `pwd`/sys
 mount -t tmpfs none `pwd`/tmp
+chmod 777 tmp
+chmod +t tmp
 debootstrap bullseye . http://deb.debian.org/debian
 chroot . /bin/bash
-chmod 777 /tmp
 apt update
 apt install git
 cd /root
@@ -237,7 +238,7 @@ This will add the `iscsi-target-ramdisk` to your UEFI boot entries as the defaul
 
 Disable DHCP for iSCSI Boot network interface:
 ```
-install -m 0755 -T debian_build/root/iscsi-target-ramdisk/src/isbootifname /usr/local/etc/rc.d/isbootifname
+install -m 0755 debian_build/root/iscsi-target-ramdisk/src/isbootifname /usr/local/etc/rc.d/isbootifname
 sysrc ifconfig_bootnet0="NOAUTO"
 ```
 
