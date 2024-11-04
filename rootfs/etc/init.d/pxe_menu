@@ -126,7 +126,7 @@ EOF
 				fi
 				TITLE="$(sed -n 's/^title[ \t]*\(.*\)/\1/p' $entry)"
 				KERNEL_PATH="$(sed -n 's/^linux[ \t]*\(.*\)/\1/p' $entry)"
-				INITRD_PATH="$(sed -n 's/^initrd[ \t]*\(.*\)/\1/p' $entry)"
+				INITRD_PATH="$(sed -n 's/^initrd[ \t]*\([^ \t]*\).*/\1/p' $entry)"
 				OPTIONS="$(sed -n 's/^options[ \t]*\(.*\)/\1/p' $entry | sed "$cmdline_sed")"
 				if [ -n "$TITLE" -a -n "$KERNEL_PATH" -a -n "$INITRD_PATH" ]; then
 					LABEL="$(basename "$entry")"
